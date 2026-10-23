@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>reload persistence test</title></head>
+<body>
+<iframe id="app" src="../index.html" style="width:100vw;height:100vh;border:0"></iframe>
+<pre id="log">LOG_START</pre>
+<script>
+const log = document.getElementById('log');
+function add(s){
+  log.textContent += '\n' + s;
+  fetch('http://localhost:8001/__result', { method: 'POST', body: s }).catch(() => {});
+}
+const f = document.getElementById('app');
+f.addEventListener('load', () => {
+  const w = f.contentWindow;
+  w.addEventListener('error', e => add('PAGE_ERROR: ' + e.message));
+  w.addEventListener('unhandledrejection', e => add('REJECT: ' + (e.reason && e.reason.message || e.reason)));
+  setTimeout(async () => {
+    try {
+      // 全新加载（模拟用户刷新/重开页面），不上传任何照片，直接打开同一地点
+      add('mem_count_after_reload=' + w.MEM.count('cn:110000:东城区'));
+      w.document.getElementById('btn-enter').click();
+      w.WarpScene.skip();
+      await new Promise(r => setTimeout(r, 1600));
+      await w.MAP.__test_drill_city();
+      await w.MEM.openGallery('cn:110000:东城区', '北京市 · 东城区');
+      add('gallery_reopened');
+      setTimeout(() => {
+        const cards = w.document.querySelectorAll('.photo-card');
+        add('persisted_cards=' + cards.length);
+        add('caps=' + Array.from(w.document.querySelectorAll('.photo-card .cap')).map(c => c.textContent).join('|'));
+        // 验证地图上金色高亮：返回地图
+        w.MEM.store && add('index_in_mem=' + JSON.stringify(w.MEM.store));
+        add('DONE');
+      }, 2000);
+    } catch (e) { add('HARNESS_ERROR: ' + e.message); add('DONE'); }
+  }, 1500);
+});
+</script>
+</body>
+</html>

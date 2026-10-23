@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<!-- 新功能冒烟测试：在 iframe 中加载真实页面，驱动核心逻辑并断言。
+     运行：node tools/test_server.js 然后浏览器打开 http://localhost:8001/tools/test_features.html
+     结果写入 tools/result.txt，最后一行 DONE 后服务器自动退出
+     ⚠ headless 运行时【不要】加 -virtual-time-budget：
+       shrink() 用 blob: URL 加载图片，虚拟时间下 iframe 内的 blob 加载永不完成，会假挂起。
+       真实时间运行即可（全套约 15s）。 -->
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>features smoke test</title></head>
+<body style="background:#111;color:#eee;font:13px Consolas">
+<iframe id="app" src="/index.html" style="width:1200px;height:700px;border:0"></iframe>
+<pre id="log"></pre>
+<script>
+const results = [];
+function log(ok, name, extra) {
+  const line = (ok ? 'PASS' : 'FAIL') + ' ' + name + (extra ? ' :: ' + extra : '');
+  results.push(line);
+  document.getElementById('log').textContent = results.join('\n');
+  fetch('/__result', { method: 'POST', body: line + '\n' }).catch(() => {}); // 逐行上报，挂起时也能看到最后一步
+}
+function report(done) {
+  // 逐行已上报，这里只补 DONE（服务器收到 DONE 后退出）
+  const body = done ? 'DONE' : results.join('\n');
+  fetch('/__result', { method: 'POST', body }).then(() => {
+    if (done) { document.title = 'FINISHED'; setTimeout(() => window.close(), 300); } // 让 headless Edge 及时退出
+  });
+}
+
+const iframe = document.getElementById('app');
+iframe.onload = async () => {
+  try { await runTests(); clearTimeout(overall); report(true); }
+  catch (e) { log(false, 'exception', e.stack || e.message); report(true); }
+};
+
+function makeBlob(color, w, h) {
+  // 在 iframe 文档里造一张图片 blob
+  const doc = iframe.contentDocument;
+  const c = doc.createElement('canvas');
+  c.width = w || 300; c.height = h || 200;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = color; ctx.fillRect(0, 0, c.width, c.height);
+  return new Promise(r => c.toBlob(r, 'image/jpeg', 0.8));
+}
+
+async function runTests() {
+  const w = iframe.contentWindow;
+  const $ = id => w.document.getElementById(id);
+
+  // 等待 MEM/MAP/STATS 就绪
+  for (let i = 0; i < 50 && !(w.MEM && w.MAP && w.STATS); i++) await sleep(100);
+  log(!!(w.MEM && w.MAP && w.STATS && w.showScene), 'modules loaded');
+
+  // 断网/墙外图床会让缩略图探测挂起（虚拟时间随之暂停），测试里禁用外链缩略图
+  w.LM_INDEX = {};
+
+  // 清空旧数据，隔离测试
+  w.localStorage.removeItem('travel_memory_index_v1');
+
+  // ---- 1. 场景切换包含 stats ----
+  w.showScene('scene-stats');
+  await sleep(50);
+  log($('scene-stats').classList.contains('active'), 'showScene stats');
+
+  // ---- 2. 统计页空数据 ----
+  w.MEM.store = {};
+  w.STATS.render();
+  log($('stats-body').innerHTML.includes('还没有任何记忆'), 'stats empty state');
+
+  // ---- 3. 上传照片（走 __handleFiles，跳过弹窗：直接 mock dialog）----
+  // handleFiles 会弹 openUploadDialog —— 用自动点击“保存”的方式处理
+  const blob1 = await makeBlob('#c33'), blob2 = await makeBlob('#3c3'), blob3 = await makeBlob('#33c');
+  w.MEM.openGallery('world:Japan', '日本');
+  await sleep(300);
+
+  const files = [
+    new w.File([blob1], 'a.jpg', { type: 'image/jpeg', lastModified: Date.parse('2024-04-10T08:00:00') }),
+    new w.File([blob2], 'b.jpg', { type: 'image/jpeg', lastModified: Date.parse('2024-04-11T08:00:00') }),
+    new w.File([blob3], 'c.jpg', { type: 'image/jpeg', lastModified: Date.parse('2023-09-05T08:00:00') })
+  ];
+  const p = w.MEM.__handleFiles(files);
+  // 等弹窗出现，填备注并保存
+  await waitFor(() => w.document.querySelector('.up-dialog'), 2000);
+  const dlg = w.document.querySelector('.up-dialog');
+  log(!!dlg, 'upload dialog opens');
+  dlg.querySelector('.up-cap').value = '测试备注';
+  dlg.querySelector('.up-ok').click();
+  await p;
+  await sleep(400);
+
+  // ---- 4. 照片渲染 + 日期角标 + 时间线分组 ----
+  const cards = w.document.querySelectorAll('#gallery-grid .photo-card');
+  log(cards.length === 3, '3 photo cards rendered', 'got ' + cards.length);
+  const months = w.document.querySelectorAll('#gallery-grid .tl-month');
+  log(months.length === 2, 'timeline grouped by month (2023年9月 + 2024年4月)', 'got ' + months.length);
+  const badges = w.document.querySelectorAll('#gallery-grid .date-badge');
+  log(badges.length === 3, 'date badges on cards', 'got ' + badges.length);
+  // 排序：早的在前
+  const first = w.document.querySelector('#gallery-grid .photo-card .date-badge');
+  log(first && first.textContent === '9/5', 'sorted by date asc', first && first.textContent);
+
+  // ---- 5. 索引 + 统计页数字 ----
+  log(w.MEM.count('world:Japan') === 3, 'index count = 3');
+  w.MEM.store = JSON.parse(w.localStorage.getItem('travel_memory_index_v1'));
+  w.showScene('scene-stats');
+  await sleep(50);
+  w.STATS.render();
+  await sleep(200);
+  const nums = [...w.document.querySelectorAll('.stat-num')].map(e => e.textContent);
+  log(nums[0] === '3', 'stats total photos = 3', nums.join(','));
+  log(nums[1] === '1', 'stats countries = 1');
+  log($('stats-body').innerHTML.includes('日本'), 'stats list shows 日本 (zhName)');
+
+  // ---- 6. Lightbox 翻页 ----
+  w.showScene('scene-gallery');
+  await sleep(100);
+  w.document.querySelectorAll('#gallery-grid .photo-card')[0].click();
+  await sleep(150);
+  log($('lightbox').classList.contains('open'), 'lightbox opens');
+  log($('lightbox-count').textContent === '1 / 3', 'lightbox counter', $('lightbox-count').textContent);
+  $('lightbox-next').click();
+  await sleep(100);
+  log($('lightbox-count').textContent === '2 / 3', 'next -> 2/3');
+  $('lightbox-prev').click();
+  await sleep(100);
+  log($('lightbox-count').textContent === '1 / 3', 'prev -> 1/3');
+  $('lightbox-prev').click(); // 环绕
+  await sleep(100);
+  log($('lightbox-count').textContent === '3 / 3', 'wrap around -> 3/3');
+  log($('lightbox-cap').textContent.includes('测试备注'), 'lightbox caption has note');
+
+  // ---- 7. 编辑单张照片 ----
+  w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape' }));
+  await sleep(150);
+  const editBtn = w.document.querySelector('#gallery-grid .photo-card .edit');
+  editBtn.click();
+  await waitFor(() => w.document.querySelector('.up-dialog'), 2000);
+  const edlg = w.document.querySelector('.up-dialog');
+  log(edlg.querySelector('.up-cap').value === '测试备注', 'edit dialog prefilled');
+  edlg.querySelector('.up-date').value = '2025-01-01';
+  edlg.querySelector('.up-ok').click();
+  // 先等 IndexedDB 真正写入（真实异步，不受虚拟时间影响），再等 DOM 重渲染
+  let stored = [];
+  for (let i = 0; i < 100; i++) {
+    stored = await w.MEM.getPhotos('world:Japan');
+    if (stored.some(x => x.date === '2025-01-01')) break;
+    await sleep(60);
+  }
+  const regrouped = await waitFor(() =>
+    [...w.document.querySelectorAll('#gallery-grid .tl-month')]
+      .some(m => m.textContent.includes('2025年1月')), 8000);
+  log(stored.some(x => x.date === '2025-01-01') && regrouped, 'edit date regroups timeline',
+    'dom: ' + [...w.document.querySelectorAll('#gallery-grid .tl-month')].map(m => m.textContent).join('|')
+    + ' || idb dates: ' + stored.map(x => x.date || '(none)').join(',')
+    + ' || err: ' + ($('err-overlay').textContent || '(none)'));
+
+  // ---- 8. 地图高亮联动 ----
+  log(w.MAP.refreshHighlight && true, 'MAP.refreshHighlight exists');
+
+  // 清理测试数据
+  w.localStorage.removeItem('travel_memory_index_v1');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+async function waitFor(fn, timeout) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < timeout) { if (fn()) return true; await sleep(50); }
+  return false;
+}
+// 注意：headless Edge 的 --virtual-time-budget 会加速页面虚拟时钟，
+// 这个看门狗必须远大于测试内所有 sleep 的总和（虚拟时间）
+const overall = setTimeout(() => { log(false, 'TIMEOUT overall'); report(true); }, 600000);
+</script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<!-- 可视化调试页：加载 index.html，注入假数据，跳转到指定场景供截图。
+     用法: http://localhost:8001/tools/shoot.html#stats  (scene: stats|gallery|lightbox|map|mobile)
+     仅供开发截图，不参与产品运行 -->
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>shoot</title></head>
+<body style="margin:0">
+<iframe id="app" src="/index.html" style="width:1280px;height:800px;border:0"></iframe>
+<script>
+const iframe = document.getElementById('app');
+function trace(msg) {
+  fetch('/__result', { method: 'POST', body: 'SHOOT ' + msg }).catch(() => {});
+}
+iframe.onload = async () => {
+  trace('iframe loaded');
+  try { await shoot(); } catch (e) { trace('EXCEPTION ' + (e && e.stack || e)); }
+};
+async function shoot() {
+  const w = iframe.contentWindow;
+  for (let i = 0; i < 50 && !(w.MEM && w.STATS); i++) await sleep(100);
+  w.LM_INDEX = {}; // 禁用外链缩略图，避免探测挂起拖住虚拟时间
+  w.document.body.classList.add('no-trans'); // headless 下 CSS 过渡不推进，截图前关掉
+  installFakeIDB(w); // 真实 IndexedDB 的回调来自浏览器进程，虚拟时间下会输掉预算竞争 → 用内存假实现
+  w.MEM.__dropDB();  // 启动时 MEM.init 已缓存真实连接，丢掉它才会走假实现
+  trace('fakeIDB=' + !!(w.indexedDB && w.indexedDB.__fake));
+  trace('modules: ' + !!(w.MEM && w.STATS));
+  trace('want=' + (location.hash.slice(1) || 'stats')); const want = location.hash.slice(1) || 'stats';
+
+  // 注入假照片数据（不经过弹窗）
+  const idx = { 'world:Japan': 3, 'cn:110000:东城区': 2, 'us:California:Los Angeles County': 1 };
+  w.localStorage.setItem('travel_memory_index_v1', JSON.stringify(idx));
+  w.MEM.store = idx;
+
+  // 通过应用自己的 IndexedDB 连接写入（headless 下第二连接会挂起）
+  async function putPhotos(key, specs) {
+    const list = [];
+    for (const s of specs) {
+      const c = w.document.createElement('canvas');
+      c.width = 400; c.height = 300;
+      const ctx = c.getContext('2d');
+      const g = ctx.createLinearGradient(0, 0, 400, 300);
+      g.addColorStop(0, s.c1); g.addColorStop(1, s.c2);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 400, 300);
+      ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = 'bold 34px sans-serif';
+      ctx.fillText(s.label, 24, 160);
+      trace('toBlob ' + s.id);
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
+      trace('toBlob ok ' + s.id);
+      list.push({ id: s.id, blob, cap: s.cap, ts: Date.parse(s.date), date: s.date });
+    }
+    trace('idbPut start');
+    await w.MEM.__idbPut(key, list);
+    trace('idbPut done');
+  }
+  trace('putPhotos'); await putPhotos('world:Japan', [
+    { id: 'p1', c1: '#e96443', c2: '#904e95', label: '浅草寺', cap: '雷门大灯笼', date: '2024-04-10' },
+    { id: 'p2', c1: '#4568dc', c2: '#b06ab3', label: '富士山', cap: '河口湖远眺', date: '2024-04-11' },
+    { id: 'p3', c1: '#11998e', c2: '#38ef7d', label: '奈良', cap: '和小鹿合影', date: '2023-09-05' }
+  ]);
+
+  trace('rendering ' + want); if (want === 'stats') {
+    w.showScene('scene-stats');
+    w.STATS.render();
+  } else if (want === 'gallery' || want === 'lightbox' || want === 'mobile') {
+    await w.MEM.openGallery('world:Japan', '日本');
+    if (want === 'lightbox') {
+      await sleep(400);
+      w.document.querySelectorAll('#gallery-grid .photo-card')[1].click();
+    }
+  } else if (want === 'map') {
+    w.showScene('scene-map');
+    if (!w.__mapInited) { w.__mapInited = true; w.MAP.init(w.document.getElementById('map-chart')); }
+    await sleep(600);
+  }
+  // 移动端尺寸放到渲染之后：headless 下提前改 iframe 尺寸会让后续定时器卡住
+  if (want === 'mobile') {
+    iframe.style.width = '390px'; iframe.style.height = '780px';
+    await sleep(300);
+  }
+  await sleep(800);
+  trace('done want=' + want + ' coverActive=' + w.document.getElementById('scene-cover').classList.contains('active')
+    + ' statsActive=' + w.document.getElementById('scene-stats').classList.contains('active'));
+  document.title = 'READY';
+};
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// 内存版 IndexedDB：只实现应用用到的 open/transaction/objectStore/get/put。
+// 回调一律 setTimeout(0) 触发，--virtual-time-budget 下能正常推进（真实 IDB 不行）。
+function installFakeIDB(w) {
+  const stores = {};
+  const later = fn => setTimeout(fn, 0);
+  const makeRequest = () => ({ result: undefined, onsuccess: null, onerror: null, onupgradeneeded: null });
+  const fake = {
+    __fake: true,
+    open() {
+      const r = makeRequest();
+      later(() => {
+        const db = {
+          createObjectStore: s => (stores[s] = stores[s] || new Map()),
+          transaction(store) {
+            const m = stores[store] || (stores[store] = new Map());
+            const tx = {
+              oncomplete: null, onerror: null,
+              objectStore: () => ({
+                get(k) {
+                  const q = makeRequest();
+                  later(() => { q.result = m.has(k) ? m.get(k) : undefined; q.onsuccess && q.onsuccess({ target: q }); });
+                  return q;
+                },
+                put(v, k) {
+                  m.set(k, v);
+                  const q = makeRequest();
+                  later(() => q.onsuccess && q.onsuccess({ target: q }));
+                  return q;
+                }
+              })
+            };
+            later(() => tx.oncomplete && tx.oncomplete());
+            return tx;
+          }
+        };
+        if (r.onupgradeneeded) { r.result = db; r.onupgradeneeded({ target: r }); }
+        r.result = db;
+        r.onsuccess && r.onsuccess({ target: r });
+      });
+      return r;
+    }
+  };
+  // window.indexedDB 是只读访问器，直接赋值会静默失败，必须 defineProperty 影子覆盖
+  Object.defineProperty(w, 'indexedDB', { value: fake, configurable: true, writable: true });
+}
+</script>
+</body>
+</html>

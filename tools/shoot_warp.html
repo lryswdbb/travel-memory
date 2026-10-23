@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<!-- 截图页：直达抵达态交互地球（配合 headless --screenshot 使用） -->
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>shoot warp</title></head>
+<body style="margin:0">
+<iframe id="app" src="/index.html" style="width:1280px;height:800px;border:0"></iframe>
+<script>
+const iframe = document.getElementById('app');
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+iframe.onload = async () => {
+  const w = iframe.contentWindow, $ = id => w.document.getElementById(id);
+  w.document.body.classList.add('no-trans'); // headless 下 CSS 过渡会卡在中间态
+  for (let i = 0; i < 50 && !w.WarpScene; i++) await sleep(100);
+  $('btn-enter').click();
+  for (let i = 0; i < 400 && !w.WarpScene.arrived; i++) await sleep(100);
+  // headless 下 rAF 稀疏，开场运镜不会自己走完 —— 手动对齐相机
+  w.WarpScene.__snapZoom();
+  await sleep(300);
+  w.WarpScene.__snapZoom();
+  await sleep(1200);
+  fetch('/__result', { method: 'POST', body: 'SHOOTWARP arrived=' + w.WarpScene.arrived + ' texture=' + w.WarpScene.textureOk + ' dist=' + w.WarpScene.__dist.toFixed(0) }).catch(() => {});
+  document.title = 'READY';
+};
+</script>
+</body>
+</html>

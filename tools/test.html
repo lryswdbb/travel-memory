@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>smoke test</title></head>
+<body>
+<iframe id="app" src="../index.html" style="width:100vw;height:100vh;border:0"></iframe>
+<pre id="log">LOG_START</pre>
+<script>
+const log = document.getElementById('log');
+function add(s){ log.textContent += '\n' + s; }
+const f = document.getElementById('app');
+f.addEventListener('load', () => {
+  try {
+    const w = f.contentWindow;
+    w.addEventListener('error', e => add('PAGE_ERROR: ' + e.message));
+    w.addEventListener('unhandledrejection', e => add('REJECT: ' + (e.reason && e.reason.message || e.reason)));
+    add('IFRAME_LOADED');
+    add('echarts=' + (typeof w.echarts));
+    add('THREE=' + (typeof w.THREE));
+    add('topojson=' + (typeof w.topojson));
+    add('GEO_keys=' + Object.keys(w.__GEO__ || {}).length);
+    add('LM_INDEX=' + Object.keys(w.LM_INDEX || {}).length);
+    add('MAP=' + (typeof w.MAP));
+    add('MEM=' + (typeof w.MEM));
+    add('WarpScene=' + (typeof w.WarpScene));
+    add('world_feats=' + (w.__GEO__.world ? w.__GEO__.world.features.length : 'MISSING'));
+    add('cn_feats=' + (w.__GEO__.cn_prov ? w.__GEO__.cn_prov.features.length : 'MISSING'));
+    // 模拟点击“点击进入”按钮
+    const btn = w.document.getElementById('btn-enter');
+    if (btn) { btn.click(); add('ENTER_CLICKED'); }
+    setTimeout(() => {
+      // 跳过动画，直接进地图
+      w.WarpScene.skip();
+      setTimeout(async () => {
+        add('map_level=' + (w.MAP.level || 'n/a'));
+        // 测试中国省级下钻
+        try {
+          await w.MAP.__test_drill_cn();
+          add('cn_drill=ok');
+        } catch (e) { add('cn_drill=FAIL ' + e.message); }
+        // 测试城市级下钻（动态加载 city 文件）
+        try {
+          await w.MAP.__test_drill_city();
+          add('city_drill=ok level=' + w.MAP.level);
+        } catch (e) { add('city_drill=FAIL ' + e.message); }
+        // 测试美国县级下钻
+        try {
+          await w.MAP.__test_drill_us();
+          add('us_drill=ok level=' + w.MAP.level);
+        } catch (e) { add('us_drill=FAIL ' + e.message); }
+        // 模拟点击照片墙
+        w.MEM.openGallery('cn:110000:东城区', '北京市 · 东城区');
+        setTimeout(() => {
+          add('gallery_active=' + w.document.getElementById('scene-gallery').classList.contains('active'));
+          add('gallery_name=' + w.document.getElementById('gallery-name').textContent);
+          add('DONE');
+        }, 2500);
+      }, 1600);
+    }, 1200);
+  } catch (e) { add('HARNESS_ERROR: ' + e.message); }
+});
+</script>
+</body>
+</html>

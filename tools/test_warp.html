@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<!-- 星际穿梭→抵达态交互地球 冒烟测试 + 截图页
+     用法: http://localhost:8001/tools/test_warp.html   (结果 POST 到 /__result)
+           http://localhost:8001/tools/test_warp.html#shoot  (截图抵达态) -->
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>warp test</title></head>
+<body style="margin:0">
+<iframe id="app" src="/index.html" style="width:1280px;height:800px;border:0"></iframe>
+<script>
+const results = [];
+const SHOOT = location.hash === '#shoot';
+function log(ok, name, extra) {
+  results.push((ok ? 'PASS' : 'FAIL') + ' ' + name + (extra ? ' :: ' + extra : ''));
+}
+function report() {
+  fetch('/__result', { method: 'POST', body: results.join('\n') + '\nDONE' })
+    .then(() => { document.title = 'FINISHED'; });
+}
+function trace(msg) {
+  fetch('/__result', { method: 'POST', body: 'WARP ' + msg }).catch(() => {});
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+const iframe = document.getElementById('app');
+iframe.onload = async () => {
+  try { await run(); } catch (e) { log(false, 'exception', (e && e.stack) || e); }
+  report();
+};
+
+async function run() {
+  const w = iframe.contentWindow;
+  const $ = id => w.document.getElementById(id);
+  for (let i = 0; i < 50 && !(w.WarpScene && w.MEM); i++) await sleep(100);
+  log(!!(w.WarpScene && w.MEM), 'modules loaded');
+
+  // 点击进入 → 开始穿梭
+  $('btn-enter').click();
+  await sleep(300);
+  log($('scene-warp').classList.contains('active'), 'warp scene active');
+
+  // 等到抵达态（动画 total 9.4s；虚拟时间下由 budget 推进）
+  for (let i = 0; i < 400 && !w.WarpScene.arrived; i++) await sleep(100);
+  log(w.WarpScene.arrived, 'arrived (interactive earth)', 'textureOk=' + w.WarpScene.textureOk);
+  log($('warp-ui').classList.contains('show'), 'arrival UI shown');
+  log($('warp-skip').style.display === 'none', 'skip button hidden after arrival');
+
+  // 抵达态：点击画面不应直接跳地图（之前单击=跳过，现在单击=准备拖拽）
+  const canvas = $('warp-canvas');
+  canvas.dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+  await sleep(200);
+  log(!$('scene-map').classList.contains('visible'), 'single click on earth does NOT go to map');
+
+  // 拖拽旋转：pointerdown → move → up，检查地球旋转角变化
+  const rot0 = w.WarpScene.__rotY;
+  canvas.dispatchEvent(new w.PointerEvent('pointerdown', { bubbles: true, clientX: 400, clientY: 400, pointerId: 1 }));
+  canvas.dispatchEvent(new w.PointerEvent('pointermove', { bubbles: true, clientX: 520, clientY: 430, pointerId: 1 }));
+  canvas.dispatchEvent(new w.PointerEvent('pointerup', { bubbles: true, clientX: 520, clientY: 430, pointerId: 1 }));
+  await sleep(300);
+  const rot1 = w.WarpScene.__rotY;
+  log(Math.abs(rot1 - rot0) > 0.3, 'drag rotates earth', 'Δrot=' + (rot1 - rot0).toFixed(3));
+
+  // 滚轮缩放：deltaY<0 → 目标距离变小（拉近）。dist 由 arriveLoop 缓动逼近，
+  // headless 下 rAF 只触发一次，故以 target 方向为准，并验证 dist 朝 target 移动。
+  const tgt0 = w.WarpScene.__target;
+  canvas.dispatchEvent(new w.WheelEvent('wheel', { bubbles: true, deltaY: -240, cancelable: true }));
+  await sleep(80);
+  const tgt1 = w.WarpScene.__target, distA = w.WarpScene.__dist;
+  log(tgt1 < tgt0, 'wheel-in moves camera target closer', `target ${tgt0.toFixed(0)}→${tgt1.toFixed(0)}`);
+  // 反向滚轮拉远
+  canvas.dispatchEvent(new w.WheelEvent('wheel', { bubbles: true, deltaY: 240, cancelable: true }));
+  await sleep(80);
+  const tgt2 = w.WarpScene.__target;
+  log(tgt2 > tgt1, 'wheel-out moves camera target farther', `target ${tgt1.toFixed(0)}→${tgt2.toFixed(0)}`);
+  // 缩放被夹在 [CAM_MIN, CAM_MAX] 内
+  for (let i = 0; i < 40; i++) canvas.dispatchEvent(new w.WheelEvent('wheel', { bubbles: true, deltaY: -500, cancelable: true }));
+  await sleep(80);
+  log(w.WarpScene.__target >= 170, 'zoom clamped at min', 'target=' + w.WarpScene.__target.toFixed(0));
+
+  // 进入地图按钮
+  $('warp-enter').click();
+  await sleep(400);
+  log($('scene-map').classList.contains('active'), 'warp-enter → map scene');
+
+  // ---- 第二轮：动画中途按空格跳过 → 应落到抵达态（可玩地球），而不是直接进地图 ----
+  w.showScene('scene-cover');
+  await sleep(1600); // 等 showScene 的 1200ms active 移除定时器走完
+  await sleep(300);  // 冲掉第一轮遗留的延迟补帧（headless 下 rAF 稀疏，不能用 rAF 等待）
+  $('btn-enter').click();
+  await sleep(500);
+  w.dispatchEvent(new w.KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+  await sleep(300);
+  log(w.WarpScene.arrived, 'space-skip lands on arrival state');
+  log($('scene-warp').classList.contains('active') && !$('scene-map').classList.contains('active'),
+    'space-skip stays on warp scene',
+    'warpActive=' + $('scene-warp').classList.contains('active') +
+    ' mapActive=' + $('scene-map').classList.contains('active') +
+    ' mapVisible=' + $('scene-map').classList.contains('visible'));
+  $('warp-enter').click();
+  await sleep(400);
+  log($('scene-map').classList.contains('active'), 'after skip: enter button → map');
+
+  if (SHOOT) {
+    // 截图模式：重新走一遍，停在抵达态
+    location.reload; // noop，截图由外层 headless --screenshot 完成
+  }
+}
+// 虚拟时间看门狗（--virtual-time-budget 会加速虚拟时钟，需远大于测试 sleep 总和）
+setTimeout(() => { log(false, 'TIMEOUT overall'); report(); }, 600000);
+</script>
+</body>
+</html>

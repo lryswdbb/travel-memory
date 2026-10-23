@@ -1,0 +1,22 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0">
+<iframe id="app" src="/index.html" style="width:1280px;height:800px;border:0"></iframe>
+<script>
+const iframe = document.getElementById('app');
+function post(m){ fetch('/__result',{method:'POST',body:'PROBE '+m}).catch(()=>{}); }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+iframe.onload = async () => {
+  const w = iframe.contentWindow, $ = id => w.document.getElementById(id);
+  for (let i=0;i<50 && !w.WarpScene;i++) await sleep(100);
+  $('btn-enter').click();
+  for (let i=0;i<400 && !w.WarpScene.arrived;i++) await sleep(100);
+  post('arrived dist='+w.WarpScene.__dist.toFixed(1)+' err='+($('err-overlay').textContent||'(none)'));
+  // count rAF frames in parent & iframe over 1000ms
+  let pFrames=0, iFrames=0;
+  (function pf(){ pFrames++; requestAnimationFrame(pf); })();
+  w.eval('(function f(){ window.__iF=(window.__iF||0)+1; requestAnimationFrame(f); })()');
+  await sleep(1000);
+  post('frames parent='+pFrames+' iframe='+(w.__iF||0)+' dist='+w.WarpScene.__dist.toFixed(1));
+  fetch('/__result',{method:'POST',body:'DONE'});
+};
+setTimeout(()=>{ fetch('/__result',{method:'POST',body:'PROBE TIMEOUT\nDONE'}); }, 600000);
+</script></body></html>

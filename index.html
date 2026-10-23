@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我们的旅行记忆</title>
+<link rel="stylesheet" href="css/style.css?v=5">
+</head>
+<body>
+
+<!-- 错误可视化：任何脚本错误直接显示在屏幕上，不再默默黑屏 -->
+<div id="err-overlay" style="display:none;position:fixed;z-index:99999;left:0;right:0;bottom:0;max-height:45vh;overflow:auto;background:rgba(120,10,20,.92);color:#ffe8e8;font:13px/1.6 Consolas,monospace;padding:12px 16px;white-space:pre-wrap;"></div>
+<script>
+(function () {
+  function showErr(msg) {
+    var el = document.getElementById('err-overlay');
+    if (!el) return;
+    el.style.display = 'block';
+    el.textContent += '⚠ ' + msg + '\n';
+  }
+  window.addEventListener('error', function (e) {
+    showErr((e.message || '未知错误') + '  @' + (e.filename || '').split('/').pop() + ':' + (e.lineno || 0));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    showErr('Promise 异常: ' + ((e.reason && e.reason.message) || e.reason));
+  });
+})();
+</script>
+
+<!-- ========== 封面 ========== -->
+<div id="scene-cover" class="scene active visible">
+  <canvas id="cover-stars"></canvas>
+  <div class="cover-content">
+    <h1 class="cover-title">我们的旅行记忆</h1>
+    <p class="cover-sub">OUR TRAVEL MEMORIES</p>
+    <button id="btn-enter" class="btn-enter">点击进入</button>
+  </div>
+</div>
+
+<!-- ========== 星际穿梭 ========== -->
+<div id="scene-warp" class="scene">
+  <canvas id="warp-canvas"></canvas>
+  <div id="warp-hint" class="warp-hint">正在穿越星系，抵达地球…</div>
+  <div id="warp-earth-label" class="warp-earth-label">地球 · EARTH</div>
+  <button id="warp-skip" class="warp-skip">跳过动画 →</button>
+  <!-- 抵达态：可交互卫星地球 UI -->
+  <div id="warp-ui" class="warp-ui">
+    <div class="warp-ui-title">地球 · EARTH</div>
+    <div class="warp-ui-hint">拖动旋转 · 滚轮缩放 · 双击画面也可进入</div>
+    <button id="warp-enter" class="warp-enter">进入地图 →</button>
+  </div>
+</div>
+
+<!-- ========== 地图 ========== -->
+<div id="scene-map" class="scene">
+  <div id="map-breadcrumb" class="breadcrumb">
+    <span class="crumb-link" data-level="world">🌍 世界</span>
+  </div>
+  <div id="map-chart"></div>
+  <button id="btn-stats" class="btn-stats" title="查看旅行足迹统计">📊 足迹</button>
+  <div id="map-tip" class="map-tip">点击任意区域，收藏你们的旅行记忆</div>
+  <div id="map-legend" class="map-legend">
+    <span class="dot visited"></span>已有记忆
+    <span class="dot"></span>未探索
+  </div>
+</div>
+
+<!-- ========== 旅行足迹统计 ========== -->
+<div id="scene-stats" class="scene">
+  <div class="stats-content">
+    <div class="gallery-head">
+      <button id="stats-back" class="btn-back">← 返回地图</button>
+      <div class="gallery-title">
+        <h2>旅行足迹</h2>
+        <p>OUR FOOTPRINTS</p>
+      </div>
+      <span class="head-spacer"></span>
+    </div>
+    <div id="stats-body" class="stats-body"></div>
+  </div>
+</div>
+
+<!-- ========== 照片墙 ========== -->
+<div id="scene-gallery" class="scene">
+  <div id="gallery-bg"></div>
+  <div id="gallery-overlay"></div>
+  <div class="gallery-content">
+    <div class="gallery-head">
+      <button id="btn-back" class="btn-back">← 返回地图</button>
+      <div class="gallery-title">
+        <h2 id="gallery-name">—</h2>
+        <p id="gallery-landmark"></p>
+      </div>
+      <label class="btn-upload">
+        + 添加照片
+        <input type="file" id="file-input" accept="image/*" multiple hidden>
+      </label>
+    </div>
+    <div id="gallery-grid" class="gallery-grid"></div>
+    <div id="gallery-empty" class="gallery-empty">
+      还没有关于这里的记忆<br>
+      <span>点击右上角「添加照片」，上传第一张照片吧</span>
+    </div>
+  </div>
+</div>
+
+<!-- 照片查看大图 -->
+<div id="lightbox" class="lightbox">
+  <img id="lightbox-img" alt="">
+  <div id="lightbox-cap"></div>
+  <button id="lightbox-prev" class="lb-nav lb-prev" title="上一张 (←)">‹</button>
+  <button id="lightbox-next" class="lb-nav lb-next" title="下一张 (→)">›</button>
+  <div id="lightbox-count"></div>
+  <div class="lightbox-close">✕</div>
+</div>
+
+<script src="assets/three.min.js"></script>
+<script src="assets/echarts.min.js"></script>
+<script src="assets/topojson.min.js"></script>
+<script src="data/js/world.js"></script>
+<script src="data/js/china_provinces.js"></script>
+<script src="data/js/us_states.js"></script>
+<script src="data/js/us_counties.js"></script>
+<script src="js/landmarks.js?v=5"></script>
+<script src="js/warp.js?v=5"></script>
+<script src="js/map.js?v=5"></script>
+<script src="js/gallery.js?v=5"></script>
+<script src="js/stats.js?v=5"></script>
+<script src="js/main.js?v=5"></script>
+</body>
+</html>

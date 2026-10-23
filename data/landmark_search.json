@@ -1,0 +1,447 @@
+{
+ "world:China": {
+  "q": "Forbidden City Beijing",
+  "file": "File:Sunset of the Forbidden City 2006.JPG",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/00/Sunset_of_the_Forbidden_City_2006.JPG/1280px-Sunset_of_the_Forbidden_City_2006.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Japan": {
+  "q": "Mount Fuji cherry blossom Lake Kawaguchi",
+  "file": "File:Lake Kawaguchiko Sakura Mount Fuji 4.JPG",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/36/Lake_Kawaguchiko_Sakura_Mount_Fuji_4.JPG/1280px-Lake_Kawaguchiko_Sakura_Mount_Fuji_4.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:United States": {
+  "q": "Statue of Liberty",
+  "file": "Statue of Liberty 7.jpg",
+  "thumb": "https://commons.wikimedia.org/wiki/Special:FilePath/Statue_of_Liberty_7.jpg?width=1280"
+ },
+ "world:Italy": {
+  "q": "Colosseum Rome",
+  "file": "File:Colosseum in Rome-April 2007-1- copie 2B.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d8/Colosseum_in_Rome-April_2007-1-_copie_2B.jpg/1280px-Colosseum_in_Rome-April_2007-1-_copie_2B.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:United Kingdom": {
+  "q": "Palace of Westminster",
+  "file": "File:Westminster palace.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/4/48/Westminster_palace.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "world:Russia": {
+  "q": "Saint Basil's Cathedral",
+  "file": "File:Sant Vasily cathedral in Moscow.JPG",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/40/Sant_Vasily_cathedral_in_Moscow.JPG/1280px-Sant_Vasily_cathedral_in_Moscow.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Australia": {
+  "q": "Sydney Opera House",
+  "file": "File:Sydney Opera House - Dec 2008.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7c/Sydney_Opera_House_-_Dec_2008.jpg/1280px-Sydney_Opera_House_-_Dec_2008.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Canada": {
+  "q": "Moraine Lake",
+  "file": "File:Moraine Lake 17092005.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c5/Moraine_Lake_17092005.jpg/1280px-Moraine_Lake_17092005.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:India": {
+  "q": "Taj Mahal",
+  "file": "File:Taj Mahal, Agra, India edit2.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/74/Taj_Mahal%2C_Agra%2C_India_edit2.jpg/1280px-Taj_Mahal%2C_Agra%2C_India_edit2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Egypt": {
+  "q": "Great Pyramid of Giza",
+  "file": "File:Great Sphinx of Giza (أبو الهول).jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/db/Great_Sphinx_of_Giza_%28%D8%A3%D8%A8%D9%88_%D8%A7%D9%84%D9%87%D9%88%D9%84%29.jpg/1280px-Great_Sphinx_of_Giza_%28%D8%A3%D8%A8%D9%88_%D8%A7%D9%84%D9%87%D9%88%D9%84%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Brazil": {
+  "q": "Christ the Redeemer Rio",
+  "file": "File:Christ the Redeemer - Cristo Redentor.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/Christ_the_Redeemer_-_Cristo_Redentor.jpg/1280px-Christ_the_Redeemer_-_Cristo_Redentor.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Singapore": {
+  "q": "Marina Bay Sands",
+  "file": "File:Marina Bay Sands and illuminated polyhedral building Louis Vuitton over the water at blue hour with pink clouds in Singapore.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8c/Marina_Bay_Sands_and_illuminated_polyhedral_building_Louis_Vuitton_over_the_water_at_blue_hour_with_pink_clouds_in_Singapore.jpg/1280px-Marina_Bay_Sands_and_illuminated_polyhedral_building_Louis_Vuitton_over_the_water_at_blue_hour_with_pink_clouds_in_Singapore.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Thailand": {
+  "q": "Wat Phra Kaew Bangkok",
+  "file": "File:Statue of Yaksha supporting one of the Two Golden Chedi of Wat Phra Kaew, Bangkok, Thailand.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ac/Statue_of_Yaksha_supporting_one_of_the_Two_Golden_Chedi_of_Wat_Phra_Kaew%2C_Bangkok%2C_Thailand.jpg/1280px-Statue_of_Yaksha_supporting_one_of_the_Two_Golden_Chedi_of_Wat_Phra_Kaew%2C_Bangkok%2C_Thailand.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:110000": {
+  "q": "Forbidden City Beijing",
+  "file": "File:Sunset of the Forbidden City 2006.JPG",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/00/Sunset_of_the_Forbidden_City_2006.JPG/1280px-Sunset_of_the_Forbidden_City_2006.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:440000": {
+  "q": "Canton Tower Guangzhou",
+  "file": "File:Canton Tower 20241027.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/24/Canton_Tower_20241027.jpg/1280px-Canton_Tower_20241027.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:450000": {
+  "q": "Li River Guilin karst",
+  "file": "File:1 li jiang guilin yangshuo 2011.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/92/1_li_jiang_guilin_yangshuo_2011.jpg/1280px-1_li_jiang_guilin_yangshuo_2011.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:460000": {
+  "q": "Sanya Hainan beach",
+  "file": "File:Beaches in Sanya, Hainan, China2.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/2/29/Beaches_in_Sanya%2C_Hainan%2C_China2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "cn:500000": {
+  "q": "Hongya Cave Chongqing night",
+  "file": "File:202308 Hongya Cave at night from Qiansimen Bridge.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/64/202308_Hongya_Cave_at_night_from_Qiansimen_Bridge.jpg/1280px-202308_Hongya_Cave_at_night_from_Qiansimen_Bridge.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:510000": {
+  "q": "Giant panda Chengdu",
+  "file": "File:Chengdu-pandas-d10.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/5/54/Chengdu-pandas-d10.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "cn:520000": {
+  "q": "Huangguoshu Waterfall",
+  "file": "File:Huangguoshu dapubu.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/1/18/Huangguoshu_dapubu.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "cn:530000": {
+  "q": "Jade Dragon Snow Mountain Lijiang",
+  "file": "File:Lijiang Yunnan China Jade-Dragon-Snow-Mountain-01.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/be/Lijiang_Yunnan_China_Jade-Dragon-Snow-Mountain-01.jpg/1280px-Lijiang_Yunnan_China_Jade-Dragon-Snow-Mountain-01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:540000": {
+  "q": "Potala Palace Lhasa",
+  "file": "File:Chinese stone lion at the entrance to the Potala Pallace.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/1/19/Chinese_stone_lion_at_the_entrance_to_the_Potala_Pallace.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "cn:610000": {
+  "q": "Giant Wild Goose Pagoda Xi'an",
+  "file": "File:Giant Wild Goose Pagoda, Xi'an, May, 2018-1.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/91/Giant_Wild_Goose_Pagoda%2C_Xi%27an%2C_May%2C_2018-1.jpg/1280px-Giant_Wild_Goose_Pagoda%2C_Xi%27an%2C_May%2C_2018-1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:620000": {
+  "q": "Jiayuguan Great Wall fort",
+  "file": "File:JiayuguanFort.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/1/10/JiayuguanFort.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "us:New York": {
+  "q": "Statue of Liberty",
+  "file": "Statue of Liberty 7.jpg",
+  "thumb": "https://commons.wikimedia.org/wiki/Special:FilePath/Statue_of_Liberty_7.jpg?width=1280"
+ },
+ "world:France": {
+  "q": "Eiffel Tower Paris",
+  "file": "Tour Eiffel Wikimedia Commons.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg/1920px-Tour_Eiffel_Wikimedia_Commons.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Greece": {
+  "q": "Parthenon Athens",
+  "file": "Parthenon from south.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/Parthenon_from_south.jpg/1920px-Parthenon_from_south.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Spain": {
+  "q": "Sagrada Familia",
+  "file": "Sagrada Familia March 2015-19bw.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b9/Sagrada_Familia_March_2015-19bw.jpg/1920px-Sagrada_Familia_March_2015-19bw.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Germany": {
+  "q": "Neuschwanstein Castle",
+  "file": "Neuschwanstein Castle 2024-02.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3c/Neuschwanstein_Castle_2024-02.jpg/1920px-Neuschwanstein_Castle_2024-02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Switzerland": {
+  "q": "Matterhorn",
+  "file": "Matterhorn Riffelsee 2005-06-11.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Matterhorn_Riffelsee_2005-06-11.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "world:New Zealand": {
+  "q": "Milford Sound",
+  "file": "Milford Sound in Fiordland National Park 01.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/da/Milford_Sound_in_Fiordland_National_Park_01.jpg/1920px-Milford_Sound_in_Fiordland_National_Park_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Iceland": {
+  "q": "Gullfoss waterfall",
+  "file": "Gullfoss, Suðurland, Islandia, 2014-08-16, DD 119.JPG",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/81/Gullfoss%2C_Su%C3%B0urland%2C_Islandia%2C_2014-08-16%2C_DD_119.JPG/1920px-Gullfoss%2C_Su%C3%B0urland%2C_Islandia%2C_2014-08-16%2C_DD_119.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:South Africa": {
+  "q": "Table Mountain Cape Town",
+  "file": "Cape Town (ZA), Table Mountain -- 2024 -- 2825.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Cape_Town_%28ZA%29%2C_Table_Mountain_--_2024_--_2825.jpg/1920px-Cape_Town_%28ZA%29%2C_Table_Mountain_--_2024_--_2825.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Mexico": {
+  "q": "Chichen Itza",
+  "file": "Chichen Itza 3.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/Chichen_Itza_3.jpg/1920px-Chichen_Itza_3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Peru": {
+  "q": "Machu Picchu",
+  "file": "80 - Machu Picchu - Juin 2009 - edit.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/62/80_-_Machu_Picchu_-_Juin_2009_-_edit.jpg/1920px-80_-_Machu_Picchu_-_Juin_2009_-_edit.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Nepal": {
+  "q": "Mount Everest",
+  "file": "Everest, Himalayas.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/Everest%2C_Himalayas.jpg/1920px-Everest%2C_Himalayas.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Indonesia": {
+  "q": "Borobudur temple",
+  "file": "Borobudur-Nothwest-view.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8c/Borobudur-Nothwest-view.jpg/1920px-Borobudur-Nothwest-view.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Malaysia": {
+  "q": "Petronas Towers",
+  "file": "Petronas Towers at Night - from the base upwards.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Petronas_Towers_at_Night_-_from_the_base_upwards.jpg/1920px-Petronas_Towers_at_Night_-_from_the_base_upwards.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Vietnam": {
+  "q": "Ha Long Bay",
+  "file": "Halong Bay in Vietnam.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Halong_Bay_in_Vietnam.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "world:South Korea": {
+  "q": "Gyeongbokgung palace",
+  "file": "Gyeonghoeru (Royal Banquet Hall) at Gyeongbokgung Palace, Seoul.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Gyeonghoeru_%28Royal_Banquet_Hall%29_at_Gyeongbokgung_Palace%2C_Seoul.jpg/1920px-Gyeonghoeru_%28Royal_Banquet_Hall%29_at_Gyeongbokgung_Palace%2C_Seoul.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Turkey": {
+  "q": "Hagia Sophia Istanbul",
+  "file": "Hagia Sophia Mars 2013.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/22/Hagia_Sophia_Mars_2013.jpg/1920px-Hagia_Sophia_Mars_2013.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:United Arab Emirates": {
+  "q": "Burj Khalifa Dubai",
+  "file": "Burj dubai 3.11.08.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Burj_dubai_3.11.08.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "world:Norway": {
+  "q": "Geirangerfjord",
+  "file": "Geirangerfjord LC0188.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/6/6c/Geirangerfjord_LC0188.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "world:Netherlands": {
+  "q": "Amsterdam canal",
+  "file": "Water reflection of canal houses at blue hour in Damrak Amsterdam the Netherlands.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/Water_reflection_of_canal_houses_at_blue_hour_in_Damrak_Amsterdam_the_Netherlands.jpg/1920px-Water_reflection_of_canal_houses_at_blue_hour_in_Damrak_Amsterdam_the_Netherlands.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Portugal": {
+  "q": "Belem Tower Lisbon",
+  "file": "Torre Belém April 2009-4a.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/Torre_Bel%C3%A9m_April_2009-4a.jpg/1920px-Torre_Bel%C3%A9m_April_2009-4a.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Kenya": {
+  "q": "Maasai Mara safari",
+  "file": "Hot Air Balloon Safari in Maasai Mara.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/Hot_Air_Balloon_Safari_in_Maasai_Mara.jpg/1920px-Hot_Air_Balloon_Safari_in_Maasai_Mara.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Morocco": {
+  "q": "Koutoubia Mosque Marrakesh",
+  "file": "Kutubiyya Mosque, Marrakesh, Morocco, 20250124 1834 7027.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/61/Kutubiyya_Mosque%2C_Marrakesh%2C_Morocco%2C_20250124_1834_7027.jpg/1920px-Kutubiyya_Mosque%2C_Marrakesh%2C_Morocco%2C_20250124_1834_7027.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Chile": {
+  "q": "Torres del Paine",
+  "file": "Cuernos del Paine in Torres del Paine National Park.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/76/Cuernos_del_Paine_in_Torres_del_Paine_National_Park.jpg/1920px-Cuernos_del_Paine_in_Torres_del_Paine_National_Park.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Argentina": {
+  "q": "Perito Moreno Glacier",
+  "file": "Perito Moreno Glacier Patagonia Argentina Luca Galuzzi 2005.JPG",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/Perito_Moreno_Glacier_Patagonia_Argentina_Luca_Galuzzi_2005.JPG/1920px-Perito_Moreno_Glacier_Patagonia_Argentina_Luca_Galuzzi_2005.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Dem. Rep. Korea": {
+  "q": "Pyongyang",
+  "file": "Panoramic view from Juche Tower.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5f/Panoramic_view_from_Juche_Tower.jpg/1920px-Panoramic_view_from_Juche_Tower.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "world:Korea": {
+  "q": "Gyeongbokgung palace",
+  "file": "Gyeonghoeru (Royal Banquet Hall) at Gyeongbokgung Palace, Seoul.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Gyeonghoeru_%28Royal_Banquet_Hall%29_at_Gyeongbokgung_Palace%2C_Seoul.jpg/1920px-Gyeonghoeru_%28Royal_Banquet_Hall%29_at_Gyeongbokgung_Palace%2C_Seoul.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:120000": {
+  "q": "Tianjin Eye night",
+  "file": "Tianjin Eye 10.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f6/Tianjin_Eye_10.jpg/1920px-Tianjin_Eye_10.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:130000": {
+  "q": "Chengde Mountain Resort",
+  "file": "Chengde Mountain Resort 1.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Chengde_Mountain_Resort_1.jpg/1920px-Chengde_Mountain_Resort_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:140000": {
+  "q": "Yungang Grottoes",
+  "file": "Yungang11 2010.JPG",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/58/Yungang11_2010.JPG/1920px-Yungang11_2010.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:150000": {
+  "q": "Hulunbuir grassland",
+  "file": "Hulunbuir Grasslands, Inner Mongolia.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/3/33/Hulunbuir_Grasslands%2C_Inner_Mongolia.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "cn:210000": {
+  "q": "Shenyang Imperial Palace",
+  "file": "Mukden Palace drone view 5 (cropped & rotated).jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/Mukden_Palace_drone_view_5_%28cropped_%26_rotated%29.jpg/1920px-Mukden_Palace_drone_view_5_%28cropped_%26_rotated%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:220000": {
+  "q": "Heaven Lake Changbai Mountain",
+  "file": "Heaven Lake - Changbai Mountain (Aerial photograph).jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/52/Heaven_Lake_-_Changbai_Mountain_%28Aerial_photograph%29.jpg/1920px-Heaven_Lake_-_Changbai_Mountain_%28Aerial_photograph%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:230000": {
+  "q": "Saint Sophia Cathedral Harbin",
+  "file": "201907 Saint Sophia Cathedral, Harbin under renovation.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/60/201907_Saint_Sophia_Cathedral%2C_Harbin_under_renovation.jpg/1920px-201907_Saint_Sophia_Cathedral%2C_Harbin_under_renovation.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:310000": {
+  "q": "Shanghai skyline Bund",
+  "file": "Pudong Shanghai November 2017 panorama.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/df/Pudong_Shanghai_November_2017_panorama.jpg/1920px-Pudong_Shanghai_November_2017_panorama.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:320000": {
+  "q": "Sun Yat-sen Mausoleum",
+  "file": "China-Nanjing (2024) Mausoleum of Sun Yat Sen 中山陵 - img 08.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/06/China-Nanjing_%282024%29_Mausoleum_of_Sun_Yat_Sen_%E4%B8%AD%E5%B1%B1%E9%99%B5_-_img_08.jpg/1920px-China-Nanjing_%282024%29_Mausoleum_of_Sun_Yat_Sen_%E4%B8%AD%E5%B1%B1%E9%99%B5_-_img_08.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:330000": {
+  "q": "West Lake Hangzhou",
+  "file": "20260424 West Lake and Hangzhou Skyline.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/e/ed/20260424_West_Lake_and_Hangzhou_Skyline.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "cn:350000": {
+  "q": "Gulangyu Xiamen",
+  "file": "Gulangyu Island from Zhongshan Road, Xiamen.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b6/Gulangyu_Island_from_Zhongshan_Road%2C_Xiamen.jpg/1920px-Gulangyu_Island_from_Zhongshan_Road%2C_Xiamen.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:360000": {
+  "q": "Lushan mountain",
+  "file": "Mount Lushan - fog.JPG",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/1/14/Mount_Lushan_-_fog.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "cn:370000": {
+  "q": "Mount Tai",
+  "file": "泰山 南天门.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/7/74/%E6%B3%B0%E5%B1%B1_%E5%8D%97%E5%A4%A9%E9%97%A8.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "cn:410000": {
+  "q": "Longmen Grottoes",
+  "file": "Longmen Grottoes 3.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b6/Longmen_Grottoes_3.jpg/1920px-Longmen_Grottoes_3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:420000": {
+  "q": "黄鹤楼",
+  "file": "武汉黄鹤楼.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b7/%E6%AD%A6%E6%B1%89%E9%BB%84%E9%B9%A4%E6%A5%BC.jpg/1920px-%E6%AD%A6%E6%B1%89%E9%BB%84%E9%B9%A4%E6%A5%BC.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:430000": {
+  "q": "Zhangjiajie",
+  "file": "1 zhangjiajie huangshizhai wulingyuan panorama 2012.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/62/1_zhangjiajie_huangshizhai_wulingyuan_panorama_2012.jpg/1920px-1_zhangjiajie_huangshizhai_wulingyuan_panorama_2012.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:630000": {
+  "q": "Qinghai Lake",
+  "file": "202606 Qinghai Lake 16.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fa/202606_Qinghai_Lake_16.jpg/1920px-202606_Qinghai_Lake_16.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:640000": {
+  "q": "Helan Mountain Ningxia",
+  "file": "Rock art from Helan Mountains in Ningxia Museum 47.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/17/Rock_art_from_Helan_Mountains_in_Ningxia_Museum_47.jpg/1920px-Rock_art_from_Helan_Mountains_in_Ningxia_Museum_47.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:650000": {
+  "q": "Heaven Lake Tianshan",
+  "file": "Tianshan tianchi.jpg",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Tianshan_tianchi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "cn:710000": {
+  "q": "Taipei 101",
+  "file": "Taipei Taiwan Taipei-101-Tower-01.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2d/Taipei_Taiwan_Taipei-101-Tower-01.jpg/1920px-Taipei_Taiwan_Taipei-101-Tower-01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:810000": {
+  "q": "Hong Kong Victoria Harbour night",
+  "file": "International Commerce Centre on Victoria Harbour.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/International_Commerce_Centre_on_Victoria_Harbour.jpg/1920px-International_Commerce_Centre_on_Victoria_Harbour.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "cn:820000": {
+  "q": "Ruins of St. Paul Macau",
+  "file": "Ruins of St. Paul, Macau, during a festival.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fc/Ruins_of_St._Paul%2C_Macau%2C_during_a_festival.jpg/1920px-Ruins_of_St._Paul%2C_Macau%2C_during_a_festival.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:California": {
+  "q": "Golden Gate Bridge",
+  "file": "Golden Gate Bridge as seen from Marshall’s Beach, March 2018.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c7/Golden_Gate_Bridge_as_seen_from_Marshall%E2%80%99s_Beach%2C_March_2018.jpg/1920px-Golden_Gate_Bridge_as_seen_from_Marshall%E2%80%99s_Beach%2C_March_2018.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Texas": {
+  "q": "Texas State Capitol",
+  "file": "TexasStateCapitol-2010-01.JPG",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/df/TexasStateCapitol-2010-01.JPG/1920px-TexasStateCapitol-2010-01.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Hawaii": {
+  "q": "Waikiki Beach",
+  "file": "Waikiki Beach (2024)-L1004709.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/28/Waikiki_Beach_%282024%29-L1004709.jpg/1920px-Waikiki_Beach_%282024%29-L1004709.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Florida": {
+  "q": "Miami skyline",
+  "file": "Downtown Miami skyline 20100305.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Downtown_Miami_skyline_20100305.jpg/1920px-Downtown_Miami_skyline_20100305.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Nevada": {
+  "q": "Las Vegas Strip",
+  "file": "Las Vegas (Nevada, USA), The Strip -- 2012 -- 6232.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a1/Las_Vegas_%28Nevada%2C_USA%29%2C_The_Strip_--_2012_--_6232.jpg/1920px-Las_Vegas_%28Nevada%2C_USA%29%2C_The_Strip_--_2012_--_6232.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Arizona": {
+  "q": "Grand Canyon",
+  "file": "Grand Canyon South Rim at Sunset.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/12/Grand_Canyon_South_Rim_at_Sunset.jpg/1920px-Grand_Canyon_South_Rim_at_Sunset.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Utah": {
+  "q": "Delicate Arch",
+  "file": "Delicatearch.png",
+  "thumb": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Delicatearch.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+ },
+ "us:Alaska": {
+  "q": "Denali mountain",
+  "file": "Heinrich Berann NPS Panorama of Denali without labels.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f9/Heinrich_Berann_NPS_Panorama_of_Denali_without_labels.jpg/1920px-Heinrich_Berann_NPS_Panorama_of_Denali_without_labels.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Colorado": {
+  "q": "Rocky Mountain National Park",
+  "file": "RockyMountainsNationalParkColorado.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b7/RockyMountainsNationalParkColorado.jpg/1920px-RockyMountainsNationalParkColorado.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Washington": {
+  "q": "Mount Rainier",
+  "file": "Rainier Aerial West Close Washington Mar23 R16 07149.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0a/Rainier_Aerial_West_Close_Washington_Mar23_R16_07149.jpg/1920px-Rainier_Aerial_West_Close_Washington_Mar23_R16_07149.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Wyoming": {
+  "q": "Old Faithful geyser",
+  "file": "Yellowstone National Park (WY, USA), Old Faithful Geyser -- 2022 -- 2599.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/Yellowstone_National_Park_%28WY%2C_USA%29%2C_Old_Faithful_Geyser_--_2022_--_2599.jpg/1920px-Yellowstone_National_Park_%28WY%2C_USA%29%2C_Old_Faithful_Geyser_--_2022_--_2599.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Montana": {
+  "q": "Glacier National Park Montana mountains lake",
+  "file": "Lake-sherburne-964855.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b5/Lake-sherburne-964855.jpg/1920px-Lake-sherburne-964855.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Illinois": {
+  "q": "Chicago skyline",
+  "file": "Skyline de Chicago desde el centro, Illinois, Estados Unidos, 2012-10-20, DD 06.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8e/Skyline_de_Chicago_desde_el_centro%2C_Illinois%2C_Estados_Unidos%2C_2012-10-20%2C_DD_06.jpg/1920px-Skyline_de_Chicago_desde_el_centro%2C_Illinois%2C_Estados_Unidos%2C_2012-10-20%2C_DD_06.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Massachusetts": {
+  "q": "Boston skyline",
+  "file": "Boston skyline from Longfellow Bridge September 2017 panorama 2.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ca/Boston_skyline_from_Longfellow_Bridge_September_2017_panorama_2.jpg/1920px-Boston_skyline_from_Longfellow_Bridge_September_2017_panorama_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Pennsylvania": {
+  "q": "Independence Hall Philadelphia",
+  "file": "Exterior of the Independence Hall, Aug 2019.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9f/Exterior_of_the_Independence_Hall%2C_Aug_2019.jpg/1920px-Exterior_of_the_Independence_Hall%2C_Aug_2019.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ },
+ "us:Louisiana": {
+  "q": "French Quarter New Orleans",
+  "file": "Bourbon St, French Quarter, New Orleans, USA2.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/37/Bourbon_St%2C_French_Quarter%2C_New_Orleans%2C_USA2.jpg/1920px-Bourbon_St%2C_French_Quarter%2C_New_Orleans%2C_USA2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+ }
+}

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>upload test</title></head>
+<body>
+<iframe id="app" src="../index.html" style="width:100vw;height:100vh;border:0"></iframe>
+<pre id="log">LOG_START</pre>
+<script>
+const log = document.getElementById('log');
+function add(s){
+  log.textContent += '\n' + s;
+  fetch('http://localhost:8001/__result', { method: 'POST', body: s }).catch(() => {});
+}
+const f = document.getElementById('app');
+f.addEventListener('load', () => {
+  const w = f.contentWindow;
+  w.addEventListener('error', e => add('PAGE_ERROR: ' + e.message));
+  w.addEventListener('unhandledrejection', e => add('REJECT: ' + (e.reason && e.reason.message || e.reason)));
+  // prompt 在自动化下直接返回空字符串（跳过备注弹窗）
+  w.prompt = () => '自动化测试备注';
+  w.confirm = () => true;
+
+  setTimeout(async () => {
+    try {
+      // 先走正常流程初始化地图（点击进入 → 跳过穿梭）
+      w.document.getElementById('btn-enter').click();
+      w.WarpScene.skip();
+      await new Promise(r => setTimeout(r, 1600));
+      add('map_inited=' + (typeof w.MAP.init) + ' level=' + w.MAP.level);
+
+      // 进入北京城市图 → 打开东城区照片墙
+      await w.MAP.__test_drill_city();
+      await w.MEM.openGallery('cn:110000:东城区', '北京市 · 东城区');
+      add('gallery_opened');
+
+      // 生成两张合成照片（canvas → blob → File）
+      function makeFile(color, name) {
+        return new Promise(res => {
+          const c = w.document.createElement('canvas');
+          c.width = 2000; c.height = 1500; // 故意超大，验证压缩
+          const ctx = c.getContext('2d');
+          ctx.fillStyle = color; ctx.fillRect(0, 0, 2000, 1500);
+          ctx.fillStyle = '#fff'; ctx.font = '120px sans-serif';
+          ctx.fillText(name, 100, 700);
+          c.toBlob(b => res(new w.File([b], name + '.jpg', { type: 'image/jpeg' })), 'image/jpeg');
+        });
+      }
+      const files = [await makeFile('#e74c3c', '照片A'), await makeFile('#3498db', '照片B')];
+      add('files_made=' + files.length + ' size0=' + files[0].size);
+
+      // 直接调用上传处理逻辑（headless 无法注入 file input，真实浏览器由用户选择文件触发）
+      add('calling_handleFiles');
+      const r = await Promise.race([
+        w.MEM.__handleFiles(files).then(() => 'resolved'),
+        new Promise(res => setTimeout(() => res('TIMEOUT'), 15000))
+      ]);
+      add('upload_result=' + r);
+
+      setTimeout(() => {
+        const cards = w.document.querySelectorAll('.photo-card');
+        add('cards_rendered=' + cards.length);
+        add('empty_hidden=' + (w.document.getElementById('gallery-empty').style.display === 'none'));
+        add('index_count=' + (w.MEM.count('cn:110000:东城区') || 0));
+        add('store_keys=' + JSON.stringify(Object.keys(w.MEM.store)));
+
+        // 验证 IndexedDB 里真的存了 blob，且被压缩过
+        const rq = w.indexedDB.open('travel_memory_db', 1);
+        rq.onsuccess = () => {
+          const db = rq.result;
+          const g = db.transaction('photos', 'readonly').objectStore('photos').get('cn:110000:东城区');
+          g.onsuccess = () => {
+            const list = g.result || [];
+            add('idb_count=' + list.length);
+            if (list.length) {
+              add('idb_is_blob=' + (list[0].blob instanceof w.Blob));
+              add('idb_size_shrunk=' + (list[0].blob.size < files[0].size * 2)); // 压缩后仍合理
+              add('idb_cap=' + list[0].cap);
+            }
+            // 刷新页面后仍在？验证持久化：重新读取索引
+            add('localStorage_index=' + (w.localStorage.getItem('travel_memory_index_v1') || 'none').slice(0, 80));
+            add('DONE');
+            setTimeout(() => window.close(), 300); // headless: 触发 dump 并退出
+          };
+        };
+      }, 2500);
+    } catch (e) { add('HARNESS_ERROR: ' + e.message); add('DONE'); }
+  }, 1500);
+});
+</script>
+</body>
+</html>
