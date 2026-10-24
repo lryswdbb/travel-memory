@@ -17,9 +17,11 @@
       cnCity: new Set(),         // 中国市/区
       usState: new Set(),        // 美国州
       usCounty: new Set(),       // 美国县
+      foreignProv: new Set(),    // 外国省/州（prov:<ISO>:<省名>）
       places: [],                // [{name, count}] 全部地点
       total: 0
     };
+    const provCountry = (window.MAP && window.MAP.provCountry) || {};
     for (const key of Object.keys(idx)) {
       const cnt = idx[key] || 0;
       out.total += cnt;
@@ -45,6 +47,15 @@
         out.usState.add(parts[0]);
         out.usCounty.add(parts[1]);
         out.places.push({ name: parts[1] + ', ' + parts[0], count: cnt });
+      } else if (key.startsWith('prov:')) {
+        // prov:<ISO>:<省名> —— 外国省/州
+        const parts = key.slice(5).split(':');
+        const iso = parts[0];
+        const countryEn = provCountry[iso] || '';
+        out.foreignProv.add(iso + ':' + parts[1]);
+        if (countryEn) out.countries.add(countryEn);
+        const zhC = countryEn && window.ZH ? window.ZH(countryEn) : countryEn;
+        out.places.push({ name: parts[1] + (zhC ? ', ' + zhC : ''), count: cnt });
       }
     }
     // 中国/美国本身有记忆也算国家足迹
@@ -86,12 +97,13 @@
     const provNames = cnProvinceNames(fp);
     const body = $('stats-body');
 
-    // 顶部数字卡片
+    // 顶部数字卡片（省份卡 = 中国省份 ∪ 外国省/州）
+    const provTotal = provNames.size + fp.foreignProv.size;
     const cards = `
       <div class="stat-cards">
         ${statCard('📷', fp.total, '张照片')}
         ${statCard('🌍', fp.countries.size, '个国家')}
-        ${statCard('🏞️', provNames.size, '个中国省份')}
+        ${statCard('🏞️', provTotal, '个省份 / 州')}
         ${statCard('🏙️', fp.cnCity.size + fp.usCounty.size, '个城市 / 县')}
       </div>`;
 

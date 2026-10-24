@@ -28,6 +28,22 @@
     return CITY_FILES[adcode];
   }
 
+  const PROV_FILES = {}; // iso2小写 -> 加载 Promise（全球各国省/州边界，按需加载）
+
+  function loadProvFile(iso) {
+    const key = String(iso).toLowerCase();
+    if (!PROV_FILES[key]) {
+      PROV_FILES[key] = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'data/js/prov_' + key + '.js';
+        s.onload = () => resolve(G['prov_' + key]);
+        s.onerror = () => reject(new Error('no prov data ' + iso));
+        document.head.appendChild(s);
+      });
+    }
+    return PROV_FILES[key];
+  }
+
   // ---- 已有记忆的区域（用于高亮）----
   function visitedSet(levelKey) {
     return new Set(
@@ -48,7 +64,8 @@
         textStyle: { color: '#e8ecf7', fontSize: 14 },
         formatter: p => {
           const n = p.name || '';
-          const disp = state.level === 'world' ? zhName(n) : n;
+          const disp = state.level === 'world' ? zhName(n)
+            : (state.level === 'prov' && provZhMap[n] ? `${n} · ${provZhMap[n]}` : n);
           const has = visited.has(n);
           const cnt = has ? (window.MEM.count(currentLevelKey() + ':' + n) || 0) : 0;
           return `<b>${disp}</b><br/>${has ? '📷 ' + cnt + ' 张照片 · 点击查看' : '✈️ 点击进入，收藏记忆'}`;
@@ -85,16 +102,28 @@
     if (state.level === 'cn_city') return 'cn:' + state.code;
     if (state.level === 'us_state') return 'us_state';
     if (state.level === 'us_county') return 'us:' + state.code;
+    if (state.level === 'prov') return 'prov:' + state.code;  // code = ISO2（大写）
     return state.level;
   }
 
   // ---- 各级地图构建 ----
+  // prov:<ISO>: 前缀的记忆 → 点亮世界图上对应国家
+  function countriesFromProvKeys() {
+    const isoByName = G.prov_index || {};
+    const out = new Set();
+    for (const [wname, iso] of Object.entries(isoByName)) {
+      if (Object.keys(window.MEM.store || {}).some(k => k.startsWith('prov:' + iso + ':'))) out.add(wname);
+    }
+    return out;
+  }
+
   function renderWorld() {
     reg('world', G.world);
     const visited = visitedSet('world');
     const keys = Object.keys(window.MEM.store || {});
     if (keys.some(k => k.startsWith('cn:') || k.startsWith('cn_prov:'))) visited.add('China');
     if (keys.some(k => k.startsWith('us:') || k.startsWith('us_state:'))) visited.add('United States');
+    countriesFromProvKeys().forEach(n => visited.add(n));
     const regions = G.world.features
       .map(f => f.properties.name)
       .filter(Boolean)
@@ -180,6 +209,27 @@
     updateBreadcrumb();
   }
 
+  // ---- 外国省/州层级（Natural Earth admin-1，全球通用） ----
+  let provZhMap = {};   // 当前国家 {EN省名 → 中文名}（tooltip/照片墙标题用）
+
+  async function renderForeignProvinces(iso, countryEn) {
+    const geo = await loadProvFile(iso);
+    const mapName = 'prov_' + String(iso).toLowerCase();
+    reg(mapName, geo);
+    provZhMap = {};
+    geo.features.forEach(f => {
+      if (f.properties && f.properties.zh) provZhMap[f.properties.name] = f.properties.zh;
+    });
+    const visited = visitedSet('prov:' + iso);
+    const regions = geo.features
+      .map(f => f.properties.name)
+      .filter(Boolean)
+      .map(n => visited.has(n) ? { name: n, itemStyle: visitedStyle() } : { name: n });
+    chart.setOption(baseOption(mapName, regions), true);
+    state.level = 'prov'; state.code = iso; state.name = countryEn;
+    updateBreadcrumb();
+  }
+
   const usStateFips = {
     'Alabama':'01','Alaska':'02','Arizona':'04','Arkansas':'05','California':'06','Colorado':'08',
     'Connecticut':'09','Delaware':'10','District of Columbia':'11','Florida':'12','Georgia':'13',
@@ -202,6 +252,9 @@
     } else if (state.level.startsWith('us')) {
       crumbs.push({ t: '美国', lv: 'us' });
       if (state.level === 'us_county') crumbs.push({ t: state.name, lv: 'us_county' });
+    } else if (state.level === 'prov') {
+      // state.name = 英文国名；点击国名 crumb 重进该国省图（省板块点击直接进照片墙）
+      crumbs.push({ t: zhName(state.name), lv: 'prov' });
     }
     el.innerHTML = crumbs.map((c, i) => {
       const last = i === crumbs.length - 1;
@@ -214,6 +267,7 @@
         if (lv === 'world') renderWorld();
         else if (lv === 'cn') renderChinaProvinces();
         else if (lv === 'us') renderUsStates();
+        else if (lv === 'prov') renderForeignProvinces(state.code, state.name);
       };
     });
   }
@@ -227,7 +281,16 @@
       if (state.level === 'world') {
         if (name === 'China' || name === '中国') { renderChinaProvinces(); }
         else if (name === 'United States') { renderUsStates(); }
-        else { window.MEM.openGallery('world:' + name, zhName(name)); }
+        else {
+          const iso = (G.prov_index || {})[name];
+          if (iso) {
+            // 全球省/州级下钻；数据加载失败退回国家级照片墙
+            try { await renderForeignProvinces(iso, name); }
+            catch (e) { console.warn('省级数据加载失败，进入国家照片墙：', e); window.MEM.openGallery('world:' + name, zhName(name)); }
+          } else {
+            window.MEM.openGallery('world:' + name, zhName(name));
+          }
+        }
       } else if (state.level === 'cn_province') {
         const f = G.cn_prov.features.find(x => x.properties.name === name);
         if (f) {
@@ -241,6 +304,11 @@
         else window.MEM.openGallery('us_state:' + name, name);
       } else if (state.level === 'us_county') {
         window.MEM.openGallery('us:' + state.code + ':' + name, state.name + ' · ' + name);
+      } else if (state.level === 'prov') {
+        // 外国省/州 → 照片墙；标题「中文国名 · 中文省名(有则显示，否则英文)」
+        const zhProv = provZhMap[name];
+        window.MEM.openGallery('prov:' + state.code + ':' + name,
+          zhName(state.name) + ' · ' + (zhProv || name));
       }
     });
   }
@@ -283,13 +351,17 @@
       else if (state.level === 'cn_city') renderChinaCities(state.code, state.name);
       else if (state.level === 'us_state') renderUsStates();
       else if (state.level === 'us_county') renderUsCounties(state.code);
+      else if (state.level === 'prov') renderForeignProvinces(state.code, state.name);
       chart && chart.resize();
     },
     get levelKey() { return currentLevelKey(); },
     get level() { return state.level; },
+    // ISO2 → 英文国名（gallery.js 地标背景反查用）
+    get provCountry() { return G.prov_country || {}; },
     // 测试钩子（模拟下钻，供 headless 测试用）
     async __test_drill_cn() { renderChinaProvinces(); },
     async __test_drill_city() { await renderChinaCities(110000, '北京市'); },
-    async __test_drill_us() { await renderUsStates(); await renderUsCounties('California'); }
+    async __test_drill_us() { await renderUsStates(); await renderUsCounties('California'); },
+    async __test_drill_prov(iso, country) { await renderForeignProvinces(iso || 'JP', country || 'Japan'); }
   };
 })();

@@ -53,6 +53,16 @@
     coverStars();
     window.MEM.init();
 
+    // 云端功能（认证 + 房间 + 走马灯）；CDN 失败或未配置时自动降级为纯个人模式
+    try { window.AUTH.init(); } catch (e) { console.warn('AUTH 初始化失败：', e); }
+    if (window.AUTH.available) {
+      try { window.ROOMS.init(); } catch (e) { console.warn('ROOMS 初始化失败：', e); }
+    } else {
+      const bar = document.getElementById('room-bar');
+      if (bar) bar.style.display = 'none';
+    }
+    try { window.CAROUSEL.init(); } catch (e) { console.warn('CAROUSEL 初始化失败：', e); }
+
     // 地图页 → 统计页
     document.getElementById('btn-stats').addEventListener('click', () => {
       window.STATS.render();
@@ -64,7 +74,28 @@
       setTimeout(() => window.MAP.resize && window.MAP.resize(), 80);
     });
 
+    // 走马灯：地图页 = 全部记忆；照片墙 = 当前地点
+    document.getElementById('btn-carousel').addEventListener('click', () => {
+      window.CAROUSEL.open({});
+    });
+    const galCar = document.getElementById('btn-gallery-carousel');
+    if (galCar) galCar.addEventListener('click', () => {
+      window.CAROUSEL.open({
+        locKey: window.MEM.currentKey,
+        title: window.MEM.currentName,
+      });
+    });
+
     const btn = document.getElementById('btn-enter');
+
+    // 封面登录入口（云端可用时才显示）
+    const coverAuth = document.getElementById('btn-cover-auth');
+    if (coverAuth) {
+      if (!window.AUTH.available) coverAuth.style.display = 'none';
+      else coverAuth.addEventListener('click', () => {
+        window.AUTH.open({ returnTo: 'scene-cover' });
+      });
+    }
     btn.addEventListener('click', () => {
       // 直接进地图的兜底（WebGL 不可用 / 动画异常时使用）
       const goMap = () => {

@@ -1,0 +1,3 @@
+window.__GEO__=window.__GEO__||{};window.__GEO__.prov_bl={"type":"FeatureCollection", "features": [
+{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-62.8389,17.882],[-62.8238,17.8832],[-62.8101,17.8923],[-62.7989,17.9045],[-62.7917,17.9155],[-62.8574,17.925],[-62.8661,17.9291],[-62.8673,17.9204],[-62.8613,17.9054],[-62.8509,17.8904],[-62.8389,17.882]]]},"properties":{"name":"Saint Barthélemy","zh":"圣巴泰勒米"}}
+]};

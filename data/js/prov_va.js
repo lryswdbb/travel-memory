@@ -1,0 +1,3 @@
+window.__GEO__=window.__GEO__||{};window.__GEO__.prov_va={"type":"FeatureCollection", "features": [
+{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[12.453,41.9039],[12.4528,41.9034],[12.4527,41.903],[12.4531,41.9028],[12.454,41.9028],[12.454,41.9039],[12.453,41.9039]]]},"properties":{"name":"Vatican","zh":"梵蒂冈"}}
+]};

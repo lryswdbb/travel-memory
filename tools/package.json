@@ -1,0 +1,13 @@
+{
+  "name": "travel-memory-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "travel-memory 本地构建/测试脚本（不参与产品运行）",
+  "type": "commonjs",
+  "scripts": {
+    "build-provinces": "node build_provinces.js"
+  },
+  "dependencies": {
+    "mapshaper": "^0.7.98"
+  }
+}

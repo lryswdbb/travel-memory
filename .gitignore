@@ -2,3 +2,5 @@
 server.log
 tools/result.txt
 node_modules/
+# 地图构建的原始数据（Natural Earth 等，可由 tools/build_provinces.js 重新下载）
+data/raw/
