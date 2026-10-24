@@ -137,9 +137,11 @@ on conflict (id) do nothing;
 
 create policy "rp_select" on storage.objects for select
   using (bucket_id = 'room-photos' and public.is_room_member(((storage.foldername(name))[1])::uuid));
+-- 注意：storage.foldername() 只含文件夹段、不含文件名，
+-- <room_id>/<photo_id>.jpg 的 [2] 是 NULL，不能用它判断扩展名，须直接检查 name
 create policy "rp_insert" on storage.objects for insert
   with check (bucket_id = 'room-photos' and public.is_room_member(((storage.foldername(name))[1])::uuid)
-              and (storage.foldername(name))[2] like '%.jpg');
+              and name like '%.jpg');
 create policy "rp_delete" on storage.objects for delete
   using (bucket_id = 'room-photos' and public.is_room_member(((storage.foldername(name))[1])::uuid)
          and (owner::text = auth.uid()::text or public.is_room_owner(((storage.foldername(name))[1])::uuid)));

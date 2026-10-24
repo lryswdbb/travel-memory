@@ -223,19 +223,43 @@
   // ============================================================
   // 进入 / 退出房间
   // ============================================================
+  let entering = false;
   async function enter(roomId, name, ownerId) {
-    if (!sb()) return;
-    await fetchMeta(roomId);
-    current = { id: roomId, name, ownerId: ownerId || null };
-    const backend = makeRoomBackend({ roomId });
-    await window.MEM.setBackend('room', backend);
-    window.MEM.store = backend.buildStore();
+    if (entering) return;      // 防并发重复进房（onAuthStateChange 会多次触发）
+    entering = true;
     try {
-      localStorage.setItem(CURRENT_ROOM_KEY, JSON.stringify(current));
-    } catch (e) { }
-    updateBar();
-    if (window.MAP && window.MAP.refreshHighlight) window.MAP.refreshHighlight();
-    subscribeRealtime(roomId);
+      if (!sb()) throw new Error('云服务未就绪');
+      // 先取房间照片元数据；失败则不改变任何状态（地图/后端保持原样）
+      await fetchMeta(roomId);
+      const prevBackend = window.MEM.backend;
+      const prevStore = window.MEM.store;
+      const prevCurrent = current;
+      try {
+        current = { id: roomId, name, ownerId: ownerId || null };
+        const backend = makeRoomBackend({ roomId });
+        await window.MEM.setBackend('room', backend);
+        window.MEM.store = backend.buildStore();
+        try {
+          localStorage.setItem(CURRENT_ROOM_KEY, JSON.stringify(current));
+        } catch (e) { }
+        updateBar();
+        // 地图重渲染单独保护：即使渲染异常也不影响已切换的房间数据
+        try {
+          if (window.__mapInited && window.MAP && window.MAP.refreshHighlight) window.MAP.refreshHighlight();
+        } catch (e) { console.warn('进房后地图刷新异常：', e); }
+        subscribeRealtime(roomId);
+      } catch (e) {
+        // 回滚到进房前状态，避免半更新的坏状态
+        current = prevCurrent;
+        window.MEM.store = prevStore;
+        try { await window.MEM.setBackend('local'); } catch (_) { }
+        if (prevBackend && prevBackend.mode === 'room') {
+          try { await window.MEM.setBackend('room', prevBackend); window.MEM.store = prevStore; } catch (_) { }
+        }
+        updateBar();
+        throw e;
+      }
+    } finally { entering = false; }
   }
 
   function exit(opts) {
@@ -361,7 +385,14 @@
       if (saved && saved.id) {
         const rooms = await myRooms();
         const hit = rooms.find(r => r.id === saved.id);
-        if (hit) enter(hit.id, hit.name, hit.ownerId).catch(e => console.warn('恢复房间失败：', e));
+        if (hit) {
+          try {
+            await enter(hit.id, hit.name, hit.ownerId);
+          } catch (e) {
+            console.warn('恢复房间失败：', e);
+            try { localStorage.removeItem(CURRENT_ROOM_KEY); } catch (_) { }
+          }
+        }
       }
     }
   }
@@ -457,12 +488,23 @@
         if (p1.length < 4) return err('密码至少 4 位');
         if (p1 !== p2) return err('两次输入的密码不一致');
         err('');
+        const okBtn = el.querySelector('[data-act=ok]');
+        okBtn.disabled = true; okBtn.textContent = '创建中…';
         try {
           const roomId = await createRoom(name, p1);
+          // 先关对话框，再进房；进房失败时 toast 报错（不依赖已移除的对话框）
           closeDialog(el);
-          toast('房间「' + name + '」已创建');
-          await enter(roomId, name, _lastUser && _lastUser.id);
-        } catch (e) { err(String(e.message || e)); }
+          try {
+            await enter(roomId, name, _lastUser && _lastUser.id);
+            toast('房间「' + name + '」已创建，已切换为房间模式');
+          } catch (e2) {
+            console.error('进入房间失败：', e2);
+            toast('房间已创建，但进入时出错：' + (e2.message || e2));
+          }
+        } catch (e) {
+          okBtn.disabled = false; okBtn.textContent = '创建';
+          err(String(e.message || e));
+        }
       };
       el.querySelector('[data-act=close]').onclick = () => closeDialog(el);
     });
@@ -523,8 +565,13 @@
           const okk = await joinRoom(selected.id, pass);
           if (!okk) { err('密码不正确'); okBtn.disabled = false; okBtn.textContent = '加入'; return; }
           closeDialog(el);
-          toast('已加入「' + selected.name + '」');
-          await enter(selected.id, selected.name);
+          try {
+            await enter(selected.id, selected.name);
+            toast('已加入「' + selected.name + '」，已切换为房间模式');
+          } catch (e2) {
+            console.error('进入房间失败：', e2);
+            toast('已加入房间，但进入时出错：' + (e2.message || e2));
+          }
         } catch (e) {
           err(String(e.message || e));
           okBtn.disabled = false; okBtn.textContent = '加入';

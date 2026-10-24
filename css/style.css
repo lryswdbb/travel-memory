@@ -576,11 +576,6 @@ body.no-trans * { transition: none !important; animation: none !important; }
   color-scheme: dark;
 }
 .auth-input:focus { outline: none; border-color: rgba(160,190,255,.7); }
-.auth-code {
-  font-size: 28px; letter-spacing: .6em; text-align: center;
-  font-weight: 600; color: #ffd699;
-  padding-left: calc(14px + .6em);  /* 补偿尾字母间距的偏移 */
-}
 .auth-btn {
   display: block; width: 100%;
   padding: 13px;
@@ -596,15 +591,7 @@ body.no-trans * { transition: none !important; animation: none !important; }
   border: 1px solid rgba(150,180,255,.3);
 }
 .auth-btn.ghost:hover { background: rgba(90,120,220,.18); }
-.auth-resend {
-  display: block; margin: 14px auto 0;
-  background: none; border: none; cursor: pointer;
-  color: rgba(160,190,255,.8); font-size: 13px;
-  text-decoration: underline; text-underline-offset: 3px;
-}
-.auth-resend:disabled { opacity: .45; cursor: default; text-decoration: none; }
-.auth-sent { font-size: 13px; color: rgba(200,215,245,.7); margin-bottom: 18px; text-align: center; }
-.auth-sent b { color: #ffd699; font-weight: 500; }
+.auth-login-btn { margin-top: 12px; }
 .auth-note {
   margin-top: 18px; font-size: 11px; line-height: 1.7;
   color: rgba(200,215,245,.4); text-align: center;
@@ -624,6 +611,74 @@ body.no-trans * { transition: none !important; animation: none !important; }
   color: rgba(190,210,255,.7); font-size: 13px; letter-spacing: .06em;
 }
 .auth-back:hover { color: #e8ecf7; }
+
+/* ============ 左下角账号悬浮入口 ============ */
+.user-chip {
+  position: fixed; left: 22px; bottom: 22px; z-index: 49;  /* 低于 lightbox(50)/对话框(60)，大图时不遮挡 */
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 16px 7px 7px;
+  border-radius: 999px; cursor: pointer;
+  background: rgba(15,22,55,.72);
+  border: 1px solid rgba(150,180,255,.35);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 28px rgba(0,0,0,.45);
+  transition: transform .25s, border-color .25s, box-shadow .25s;
+  animation: cardIn .4s ease;
+}
+.user-chip[hidden] { display: none; }  /* display:flex 会覆盖 hidden 属性，必须显式兜底 */
+.user-chip:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255,214,153,.6);
+  box-shadow: 0 12px 34px rgba(0,0,0,.55);
+}
+.uc-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(145deg, #2a3a7a, #1a2450);
+  background-size: cover; background-position: center;
+  border: 1px solid rgba(255,214,153,.5);
+  color: #ffd699; font-size: 15px; font-weight: 700;
+  flex: none;
+}
+.uc-name {
+  max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: #dce6ff; font-size: 13px; letter-spacing: .04em;
+}
+
+/* ============ 账号设置面板 ============ */
+.acct-panel { width: min(400px, 92vw); }
+.acct-title { text-align: center; color: #e8ecf7; font-size: 17px; letter-spacing: .08em; margin-bottom: 18px; }
+.acct-row { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+.acct-avatar { cursor: pointer; flex: none; margin-bottom: 0; }
+.acct-avatar input[type=file] { display: none; }  /* 覆盖 .up-panel input 的 display:block，保持隐藏 */
+.acct-avatar .av {
+  width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(145deg, #2a3a7a, #1a2450);
+  background-size: cover; background-position: center;
+  border: 2px solid rgba(255,214,153,.55);
+  color: #ffd699; font-size: 26px; font-weight: 700;
+  transition: transform .25s, box-shadow .25s;
+}
+.acct-avatar:hover .av { transform: scale(1.06); box-shadow: 0 0 18px rgba(255,214,153,.35); }
+.acct-id { flex: 1; min-width: 0; }
+.acct-name { color: #e8ecf7; font-size: 17px; font-weight: 600; margin-bottom: 4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-uid { color: rgba(200,215,245,.65); font-size: 13px; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.acct-uid b { color: #ffd699; font-family: Consolas, monospace; letter-spacing: .12em; font-weight: 600; }
+.acct-copy {
+  background: none; border: none; cursor: pointer; padding: 0 2px;
+  color: rgba(160,190,255,.7); font-size: 13px;
+}
+.acct-copy:hover { color: #ffd699; }
+.acct-hint { color: rgba(200,215,245,.35); font-size: 11px; margin-top: 4px; }
+.acct-sec { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(150,180,255,.15); }
+.acct-sec h4 { color: rgba(220,230,255,.85); font-size: 14px; margin-bottom: 12px; letter-spacing: .05em; }
+.acct-sec .auth-input { margin-bottom: 10px; }
+.acct-err {
+  min-height: 18px; font-size: 12px; text-align: center; margin: 2px 0 8px;
+  color: #ffd699; line-height: 1.5;
+}
 
 /* ============ 房间栏（地图右上角） ============ */
 .room-bar {
@@ -822,4 +877,8 @@ body.no-trans * { transition: none !important; animation: none !important; }
   .car-date { width: 116px; }
   .car-card { height: 18vh; }
   #car-track .car-lane:nth-child(3) { display: none; }  /* 手机 2 行 */
+  .user-chip { left: 12px; bottom: 12px; padding: 5px 12px 5px 5px; }
+  .uc-avatar { width: 28px; height: 28px; font-size: 13px; }
+  .uc-name { max-width: 72px; font-size: 12px; }
+  .rm-toast { bottom: 64px; }  /* 避开右下角头像 */
 }

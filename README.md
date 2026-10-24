@@ -5,7 +5,7 @@
 为每个地点收藏照片；照片按拍摄日期排成时间线，还有足迹统计总览页。
 照片墙背景自动换成当地的标志性景观。
 
-支持**邮箱验证码登录 + 云端共享房间**：创建房间、设定房间密码，
+支持**用户名 + 密码注册登录 + 云端共享房间**：创建房间、设定房间密码，
 家人输同一密码加入后，大家在同一张地图上共同积累旅行记忆；
 所有照片还能用**走马灯**模式浏览——自动滚动、鼠标拖拽甩动、按日期筛选。
 不登录也完全可用（个人模式，照片存本机）。
@@ -38,8 +38,9 @@ node server.js
 9. **走马灯 🎞** —— 地图页或照片墙点 🎞：三行照片错速自动滚动；
    **鼠标按住拖动**可拉动，快速甩动松手带惯性滑行；悬停暂停；点击照片进大图；
    上方筛选 **全部 / 今天 / 本周 / 本月 / 有日期**，或选一个具体日期直接跳转
-10. **登录 / 房间** —— 需先按下面「云端配置」完成一次性设置。地图页右上角房间栏：
-    登录 → 创建房间（房主设密码）或搜索加入（输房间密码）；进房后地图与照片墙
+10. **登录 / 房间** —— 需先按下面「云端配置」完成一次性设置。封面「登录 / 房间」：
+    输入用户名 + 密码 → 「创建账号并开始使用」；登录后地图右上角房间栏解锁：
+    创建房间（房主设密码）或搜索加入（输房间密码）；进房后地图与照片墙
     自动切换为房间共享数据，成员上传照片**实时同步**给彼此
 11. 已有照片的地区在地图上会以 **金色** 高亮，tooltip 显示照片数量
 12. 手机上同样可用：地图点按、照片墙单列时间线、地球双指缩放、走马灯两行滚动
@@ -52,22 +53,13 @@ node server.js
 1. **建项目**：Dashboard → New project → 区域选 Singapore。建好后到
    **Project Settings → API**，复制 `Project URL` 和 `anon public` key，
    填入 `js/config.js` 里的两个占位符。（anon key 是公开密钥，可安全提交，数据安全靠 RLS）
-2. **改邮件模板（关键）**：**Authentication → Email Templates → Magic Link**，
-   把正文里显示验证码的位置改成 `{{ .Token }}`，并**删掉所有 `{{ .ConfirmationURL }}`**。
-   不改这一步用户收到的是登录链接而不是 6 位数字验证码。
-3. **接自己的发件邮箱（解决限频）**：Supabase 内置邮件每小时只能发约 2 封，仅供测试。
-   正式用请到 **Authentication → SMTP Settings**，打开 Custom SMTP 并填 QQ 邮箱：
-   | 项 | 值 |
-   |---|---|
-   | Host | `smtp.qq.com` |
-   | Port | `465`（SSL） |
-   | Username | 你的 QQ 邮箱地址 |
-   | Password | **SMTP 授权码**（不是 QQ 密码） |
-
-   授权码获取：登录 QQ 邮箱网页版 → 设置 → 账户 → 开启「POP3/SMTP 服务」→ 按提示发短信生成。
-4. **回调地址**：**Authentication → URL Configuration**，Site URL 填你的 Pages 域名
+2. **关闭邮箱确认（关键）**：**Authentication → Sign In / Up → Email**，
+   把 **Confirm email** 开关**关掉**并保存。
+   本站用「用户名 + 密码」注册登录（用户名内部派生成账号，不发任何邮件），
+   开着邮箱确认会导致注册后拿不到会话、无法登录。
+3. **回调地址**：**Authentication → URL Configuration**，Site URL 填你的 Pages 域名
    （如 `https://<用户名>.github.io/travel-memory/`），Redirect URLs 再加一条 `http://localhost:8000` 便于本地测试。
-5. **建表**：**SQL Editor** → New query → 把 `supabase/schema.sql` 全文粘贴 → Run。
+4. **建表**：**SQL Editor** → New query → 把 `supabase/schema.sql` 全文粘贴 → Run。
    这一步创建 rooms / room_members / photos 三张表、行级安全策略、
    四个 RPC 函数、Realtime 发布，以及私有存储桶 `room-photos`。
 
@@ -97,7 +89,7 @@ travel-memory/
 │   ├── warp.js           # 星际穿梭 + 抵达态可交互地球（three.js：拖拽旋转/滚轮缩放）
 │   ├── map.js            # 多级地图（echarts：世界/中国省市/美国州县/全球省州）
 │   ├── gallery.js        # 照片墙 + 日期时间线 + 大图翻页 + IndexedDB 存储 + 上传压缩 + 后端抽象
-│   ├── auth.js           # 邮箱验证码登录（Supabase OTP，无密码体系）
+│   ├── auth.js           # 用户名 + 密码登录（Supabase，用户名派生账号，无邮件依赖）
 │   ├── rooms.js          # 云端房间：创建/加入/退出、房间栏、照片云同步（Realtime + 轮询兜底）
 │   ├── carousel.js       # 照片走马灯：三行错速滚动、拖拽甩动、日期筛选
 │   ├── stats.js          # 足迹统计总览页

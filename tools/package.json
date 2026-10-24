@@ -8,6 +8,7 @@
     "build-provinces": "node build_provinces.js"
   },
   "dependencies": {
-    "mapshaper": "^0.7.98"
+    "mapshaper": "^0.7.98",
+    "nodemailer": "^10.2.1"
   }
 }

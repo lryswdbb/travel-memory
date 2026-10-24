@@ -342,8 +342,18 @@
       renderWorld();
       bindClick();
       addEventListener('resize', () => chart.resize());
+      // 自愈：场景切换淡入淡出期间容器可能瞬时 0×0，canvas 被锁死后
+      // echarts 不会自动恢复；用 ResizeObserver 在容器恢复尺寸时自动 resize
+      if (window.ResizeObserver) {
+        new ResizeObserver(() => {
+          if (chart && el.clientWidth > 0 && el.clientHeight > 0) chart.resize();
+        }).observe(el);
+      }
     },
-    resize() { chart && chart.resize(); },
+    resize() {
+      const el = document.getElementById('map-chart');
+      if (chart && el && el.clientWidth > 0) chart.resize();
+    },
     refreshHighlight() {
       // 从照片墙返回时刷新“已有记忆”高亮
       if (state.level === 'world') renderWorld();

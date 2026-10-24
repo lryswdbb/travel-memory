@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>我们的旅行记忆</title>
-<link rel="stylesheet" href="css/style.css?v=6">
+<link rel="stylesheet" href="css/style.css?v=11">
 </head>
 <body>
 
@@ -107,36 +107,31 @@
   </div>
 </div>
 
-<!-- ========== 登录（邮箱验证码） ========== -->
+<!-- ========== 登录（用户名 + 密码） ========== -->
 <div id="scene-auth" class="scene">
   <div class="auth-wrap">
     <div class="auth-panel">
       <h2 class="auth-title">登录 / 注册</h2>
-      <p class="auth-sub">用邮箱收 6 位验证码，无需记住密码</p>
+      <p class="auth-sub">创建自己的账号，解锁云端共享房间</p>
 
-      <!-- 第 1 步：邮箱 -->
-      <div id="auth-step-email">
-        <label class="auth-label">邮箱
-          <input id="auth-email" class="auth-input" type="email" placeholder="you@example.com" autocomplete="email">
+      <!-- 登录 / 注册 -->
+      <div id="auth-step-login">
+        <label class="auth-label">用户名
+          <input id="auth-username" class="auth-input" type="text" maxlength="20" placeholder="给自己起个名字（中英文都行）" autocomplete="username">
         </label>
-        <button id="auth-send" class="auth-btn">获取验证码</button>
-        <p class="auth-note">首次使用会自动创建账号；不登录也可以继续用「个人模式」</p>
+        <label class="auth-label">密码
+          <input id="auth-password" class="auth-input" type="password" placeholder="至少 6 位" autocomplete="current-password">
+        </label>
+        <button id="auth-register" class="auth-btn">✨ 创建账号并开始使用</button>
+        <button id="auth-login" class="auth-btn ghost auth-login-btn">已有账号，登录</button>
+        <p class="auth-note">首次使用点「创建账号」即可，无需邮箱；<br>不登录也可以继续用「个人模式」（照片存本机）</p>
       </div>
 
-      <!-- 第 2 步：验证码 -->
-      <div id="auth-step-code" hidden>
-        <p class="auth-sent">验证码已发送至 <b id="auth-sent-to"></b></p>
-        <label class="auth-label">6 位验证码
-          <input id="auth-code" class="auth-input auth-code" type="text" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
-        </label>
-        <button id="auth-verify" class="auth-btn">登录</button>
-        <button id="auth-resend" class="auth-resend">重新发送</button>
-      </div>
-
-      <!-- 第 3 步：已登录 -->
+      <!-- 已登录 -->
       <div id="auth-step-user" hidden>
         <p class="auth-who-box">👤 <span id="auth-who"></span></p>
-        <button id="auth-signout" class="auth-btn ghost">退出登录</button>
+        <button id="auth-continue" class="auth-btn">继续 → 解锁房间功能</button>
+        <button id="auth-signout" class="auth-btn ghost auth-login-btn">退出登录</button>
       </div>
 
       <div id="auth-err" class="auth-err"></div>
@@ -183,21 +178,21 @@
 <script src="assets/topojson.min.js"></script>
 <!-- Supabase（云端房间）；CDN 失败不影响个人模式 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="js/config.js?v=6"></script>
+<script src="js/config.js?v=11"></script>
 <script src="data/js/world.js"></script>
 <script src="data/js/china_provinces.js"></script>
 <script src="data/js/us_states.js"></script>
 <script src="data/js/us_counties.js"></script>
 <!-- 全球省/州索引（各国边界文件 prov_<iso>.js 由 map.js 按需懒加载） -->
-<script src="data/js/prov_index.js?v=6"></script>
-<script src="js/landmarks.js?v=6"></script>
-<script src="js/warp.js?v=6"></script>
-<script src="js/map.js?v=6"></script>
-<script src="js/gallery.js?v=6"></script>
-<script src="js/auth.js?v=6"></script>
-<script src="js/rooms.js?v=6"></script>
-<script src="js/carousel.js?v=6"></script>
-<script src="js/stats.js?v=6"></script>
-<script src="js/main.js?v=6"></script>
+<script src="data/js/prov_index.js?v=11"></script>
+<script src="js/landmarks.js?v=11"></script>
+<script src="js/warp.js?v=11"></script>
+<script src="js/map.js?v=11"></script>
+<script src="js/gallery.js?v=11"></script>
+<script src="js/auth.js?v=11"></script>
+<script src="js/rooms.js?v=11"></script>
+<script src="js/carousel.js?v=11"></script>
+<script src="js/stats.js?v=11"></script>
+<script src="js/main.js?v=11"></script>
 </body>
 </html>

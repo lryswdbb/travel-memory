@@ -86,6 +86,19 @@
       });
     });
 
+    // 进入地图（初始化/刷新高亮），供「点击进入」兜底与登录后「继续」复用
+    function enterMap() {
+      window.showScene('scene-map');
+      if (!window.__mapInited) {
+        window.__mapInited = true;
+        window.MAP.init(document.getElementById('map-chart'));
+      } else {
+        window.MAP.refreshHighlight();
+      }
+      setTimeout(() => document.getElementById('map-chart') && window.MAP.resize && window.MAP.resize(), 80);
+    }
+    window.__enterMap = enterMap;
+
     const btn = document.getElementById('btn-enter');
 
     // 封面登录入口（云端可用时才显示）
@@ -93,21 +106,12 @@
     if (coverAuth) {
       if (!window.AUTH.available) coverAuth.style.display = 'none';
       else coverAuth.addEventListener('click', () => {
-        window.AUTH.open({ returnTo: 'scene-cover' });
+        window.AUTH.open({ returnTo: 'scene-map' });
       });
     }
     btn.addEventListener('click', () => {
       // 直接进地图的兜底（WebGL 不可用 / 动画异常时使用）
-      const goMap = () => {
-        window.showScene('scene-map');
-        if (!window.__mapInited) {
-          window.__mapInited = true;
-          window.MAP.init(document.getElementById('map-chart'));
-        } else {
-          window.MAP.refreshHighlight();
-        }
-        setTimeout(() => document.getElementById('map-chart') && window.MAP.resize && window.MAP.resize(), 80);
-      };
+      const goMap = enterMap;
 
       // 检测 WebGL 是否可用，不可用直接跳过动画进地图
       function webglOk() {
