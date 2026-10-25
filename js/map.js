@@ -13,6 +13,14 @@
   }
   function usGeo(obj) { return topojson.feature(G.us_counties, G.us_counties.objects[obj]); }
 
+  // 重建地图：先取消待执行的 tooltip 任务。
+  // 移动端 tap 会同时触发「延迟显示 tooltip」和「点击切场景/setOption 重建」，
+  // 旧 tooltip 组件被 dispose 后延迟任务仍执行 → 对 null 元素写 innerHTML 崩溃
+  function setMapOption(opt, notMerge) {
+    try { chart.dispatchAction({ type: 'hideTip' }); } catch (e) { }
+    chart.setOption(opt, notMerge !== false);
+  }
+
   const CITY_FILES = {}; // adcode -> 加载 Promise
 
   function loadCityFile(adcode) {
@@ -128,7 +136,7 @@
       .map(f => f.properties.name)
       .filter(Boolean)
       .map(n => visited.has(n) ? { name: n, itemStyle: visitedStyle() } : { name: n });
-    chart.setOption(baseOption('world', regions), true);
+    setMapOption(baseOption('world', regions), true);
     state.level = 'world'; state.code = null; state.name = null;
     updateBreadcrumb();
   }
@@ -157,7 +165,7 @@
       .map(r => (byAdcode.has(r.adcode) || byName.has(r.name))
         ? { name: r.name, itemStyle: visitedStyle() }
         : { name: r.name });
-    chart.setOption(baseOption('cn_prov', regions), true);
+    setMapOption(baseOption('cn_prov', regions), true);
     state.level = 'cn_province'; state.code = null; state.name = null;
     updateBreadcrumb();
   }
@@ -172,7 +180,7 @@
       .map(f => f.properties.name)
       .filter(Boolean)
       .map(n => visited.has(n) ? { name: n, itemStyle: visitedStyle() } : { name: n });
-    chart.setOption(baseOption(mapName, regions), true);
+    setMapOption(baseOption(mapName, regions), true);
     state.level = 'cn_city'; state.code = adcode; state.name = pname;
     state.single = single; // 该省只有整体一块（如部分直辖市显示）
     updateBreadcrumb();
@@ -186,7 +194,7 @@
       .map(f => f.properties.name)
       .filter(Boolean)
       .map(n => visited.has(n) ? { name: n, itemStyle: visitedStyle() } : { name: n });
-    chart.setOption(baseOption('us_states', regions), true);
+    setMapOption(baseOption('us_states', regions), true);
     state.level = 'us_state'; state.code = null; state.name = 'United States';
     updateBreadcrumb();
   }
@@ -204,7 +212,7 @@
       .map(f => f.properties.name)
       .filter(Boolean)
       .map(n => visited.has(n) ? { name: n, itemStyle: visitedStyle() } : { name: n });
-    chart.setOption(baseOption(mapName, regions), true);
+    setMapOption(baseOption(mapName, regions), true);
     state.level = 'us_county'; state.code = stateName; state.name = stateName;
     updateBreadcrumb();
   }
@@ -225,7 +233,7 @@
       .map(f => f.properties.name)
       .filter(Boolean)
       .map(n => visited.has(n) ? { name: n, itemStyle: visitedStyle() } : { name: n });
-    chart.setOption(baseOption(mapName, regions), true);
+    setMapOption(baseOption(mapName, regions), true);
     state.level = 'prov'; state.code = iso; state.name = countryEn;
     updateBreadcrumb();
   }

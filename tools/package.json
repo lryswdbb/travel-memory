@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "mapshaper": "^0.7.98",
-    "nodemailer": "^10.2.1"
+    "nodemailer": "^10.2.1",
+    "puppeteer": "^25.16.0"
   }
 }
