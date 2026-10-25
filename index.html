@@ -9,20 +9,32 @@
 <body>
 
 <!-- 错误可视化：任何脚本错误直接显示在屏幕上，不再默默黑屏 -->
-<div id="err-overlay" style="display:none;position:fixed;z-index:99999;left:0;right:0;bottom:0;max-height:45vh;overflow:auto;background:rgba(120,10,20,.92);color:#ffe8e8;font:13px/1.6 Consolas,monospace;padding:12px 16px;white-space:pre-wrap;"></div>
+<div id="err-overlay" style="display:none;position:fixed;z-index:99999;left:0;right:0;bottom:0;max-height:45vh;overflow:auto;background:rgba(120,10,20,.92);color:#ffe8e8;font:13px/1.6 Consolas,monospace;padding:12px 16px;white-space:pre-wrap;pointer-events:none;"></div>
 <script>
 (function () {
+  var counts = {};
   function showErr(msg) {
     var el = document.getElementById('err-overlay');
     if (!el) return;
     el.style.display = 'block';
     el.textContent += '⚠ ' + msg + '\n';
   }
+  // 熔断：同一条错误连报 3 次 = 多半是旧缓存页面，提示刷新而不是继续刷屏
+  function breaker(msg) {
+    counts[msg] = (counts[msg] || 0) + 1;
+    if (counts[msg] === 3) {
+      var el = document.getElementById('err-overlay');
+      if (el) el.textContent = '⚠ 同一错误反复出现：页面版本可能过旧。\n请刷新页面（浏览器菜单 → 刷新 / 清除缓存后重开）。';
+    }
+    return counts[msg] < 3;
+  }
   window.addEventListener('error', function (e) {
-    showErr((e.message || '未知错误') + '  @' + (e.filename || '').split('/').pop() + ':' + (e.lineno || 0));
+    var msg = (e.message || '未知错误') + '  @' + (e.filename || '').split('/').pop() + ':' + (e.lineno || 0);
+    if (breaker(msg)) showErr(msg);
   });
   window.addEventListener('unhandledrejection', function (e) {
-    showErr('Promise 异常: ' + ((e.reason && e.reason.message) || e.reason));
+    var msg = 'Promise 异常: ' + ((e.reason && e.reason.message) || e.reason);
+    if (breaker(msg)) showErr(msg);
   });
 })();
 </script>
