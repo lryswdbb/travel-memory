@@ -159,6 +159,27 @@
     return { ok: true };
   }
 
+  // 注销账号：服务端单事务删除本人上传照片(含存储文件)/成员关系/账号，
+  // 本地再清会话、IndexedDB 缓存与个人照片、已存房间。不可逆。
+  async function deleteAccount() {
+    if (!available || !_cachedUser) return { ok: false, error: '未登录' };
+    // 先退出房间模式，避免后端继续引用即将删除的数据
+    if (window.ROOMS && window.ROOMS.current && window.ROOMS.current()) {
+      try { window.ROOMS.exit({ silent: true }); } catch (e) { }
+    }
+    const { error } = await sb.rpc('delete_own_account');
+    if (error) return { ok: false, error: '注销失败：' + mapErr(error.message) };
+    try { await sb.auth.signOut(); } catch (e) { }   // 账号已删，会话失效报错可忽略
+    _cachedUser = null;
+    // 本地数据：关闭 IndexedDB 连接后整库删除（含个人模式照片与房间缓存）
+    try {
+      if (window.MEM && window.MEM.closeDB) window.MEM.closeDB();
+      if (window.indexedDB) indexedDB.deleteDatabase('travel_memory_db');
+    } catch (e) { }
+    try { localStorage.removeItem('travel_memory_current_room'); } catch (e) { }
+    return { ok: true };
+  }
+
   // 注册：创建新账号并直接登录（需后台已关闭邮箱确认）
   async function register(username, password) {
     if (!available) return { ok: false, error: '云服务未配置，暂时只能使用个人模式' };
@@ -355,6 +376,7 @@
           <h4>🔑 修改密码</h4>
           <input class="auth-input acct-newpass" type="password" placeholder="新密码（至少 6 位）" autocomplete="new-password">
           <input class="auth-input acct-newpass2" type="password" placeholder="确认新密码" autocomplete="new-password">
+          <button class="up-cancel danger acct-del" data-act="delete">🗑 注销账户（不可恢复）</button>
           <div class="acct-err"></div>
           <div class="up-btns">
             <button class="up-cancel" data-act="close">关闭</button>
@@ -409,6 +431,22 @@
       acctEl.querySelector('.acct-newpass').value = '';
       acctEl.querySelector('.acct-newpass2').value = '';
       err('✅ 密码已修改，下次登录请用新密码');
+    };
+
+    // 注销账户（两次确认，不可逆）
+    const delBtn = acctEl.querySelector('[data-act=delete]');
+    delBtn.onclick = async () => {
+      if (!confirm(`确定注销账号「${displayName()}」吗？\n将永久删除：你上传的所有照片、房间成员关系、账号本身。\n此操作不可恢复！`)) return;
+      if (!confirm('最后确认：删除后无法找回，同房间成员也将看不到你上传的照片。继续注销？')) return;
+      delBtn.disabled = true; delBtn.textContent = '注销中…';
+      err('');
+      const res = await deleteAccount();
+      if (!res.ok) { delBtn.disabled = false; delBtn.textContent = '🗑 注销账户（不可恢复）'; err(res.error); return; }
+      closeAccount();
+      showStep('login');
+      updateUserChip();
+      if (window.showScene) window.showScene('scene-cover');
+      alert('账号已注销，你的数据已全部删除。');
     };
     acctEl.querySelector('[data-act=close]').onclick = closeAccount;
   }
@@ -472,6 +510,7 @@
     avatarUrl,
     setAvatar,
     changePassword,
+    deleteAccount,
     openAccount,
     register,
     login,

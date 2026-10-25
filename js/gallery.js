@@ -521,6 +521,9 @@
     __handleFiles: handleFiles, // 测试钩子
     __idbPut: idbPut,            // 测试钩子（直接写入照片记录）
     __dropDB() { db = null; },   // 测试钩子：丢弃启动时缓存的真实连接，改走注入的假 indexedDB
+    closeDB() {                  // 注销账号用：关闭连接以便整库删除
+      if (db) { try { db.close(); } catch (e) { } db = null; }
+    },
     init() {
       openDB();
       $('btn-back').onclick = backToMap;

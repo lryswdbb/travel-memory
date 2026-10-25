@@ -675,6 +675,11 @@ body.no-trans * { transition: none !important; animation: none !important; }
 .acct-sec { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(150,180,255,.15); }
 .acct-sec h4 { color: rgba(220,230,255,.85); font-size: 14px; margin-bottom: 12px; letter-spacing: .05em; }
 .acct-sec .auth-input { margin-bottom: 10px; }
+.acct-del {
+  display: block; width: 100%; margin: 2px 0 4px;
+  padding: 10px; border-radius: 999px; cursor: pointer;
+  font-size: 13px; letter-spacing: .06em;
+}
 .acct-err {
   min-height: 18px; font-size: 12px; text-align: center; margin: 2px 0 8px;
   color: #ffd699; line-height: 1.5;

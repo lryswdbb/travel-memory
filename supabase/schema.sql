@@ -145,3 +145,26 @@ create policy "rp_insert" on storage.objects for insert
 create policy "rp_delete" on storage.objects for delete
   using (bucket_id = 'room-photos' and public.is_room_member(((storage.foldername(name))[1])::uuid)
          and (owner::text = auth.uid()::text or public.is_room_owner(((storage.foldername(name))[1])::uuid)));
+
+-- ============ 注销账号（用户删除自己的账号与全部数据） ============
+-- 顺序：先删本人上传照片的存储文件 → 照片行 → 房间成员关系 → 账号本身。
+-- 单事务执行，任何一步失败整体回滚（不会出现删了一半的账号）。
+-- SECURITY DEFINER 仅为绕过 RLS 删除 storage.objects 与 auth.users，
+-- 函数体严格限定 auth.uid() 本人数据，无法用于删除他人。
+create or replace function public.delete_own_account()
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  paths text[];
+begin
+  if uid is null then raise exception 'not authenticated'; end if;
+  select coalesce(array_agg(storage_path), '{}') into paths
+    from photos where uploader_id = uid;
+  if cardinality(paths) > 0 then
+    delete from storage.objects
+     where bucket_id = 'room-photos' and name = any(paths);
+  end if;
+  delete from photos where uploader_id = uid;
+  delete from room_members where user_id = uid;
+  delete from auth.users where id = uid;
+end $$;
