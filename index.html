@@ -24,7 +24,15 @@
     counts[msg] = (counts[msg] || 0) + 1;
     if (counts[msg] === 3) {
       var el = document.getElementById('err-overlay');
-      if (el) el.textContent = '⚠ 同一错误反复出现：页面版本可能过旧。\n请刷新页面（浏览器菜单 → 刷新 / 清除缓存后重开）。';
+      if (el) {
+        el.textContent = '⚠ 同一错误反复出现：页面版本可能过旧。\n';
+        var b = document.createElement('button');
+        b.textContent = '🔄 点击刷新页面获取最新版';
+        b.style.cssText = 'margin-top:8px;padding:8px 18px;border-radius:999px;border:none;' +
+          'background:#ffb74d;color:#231604;font-size:14px;font-weight:600;cursor:pointer;pointer-events:auto;';
+        b.onclick = function () { location.reload(); };
+        el.appendChild(b);
+      }
     }
     return counts[msg] < 3;
   }
