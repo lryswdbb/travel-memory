@@ -1,9 +1,12 @@
 /* 调试：登录后地图消失问题 —— 追踪场景类变化 + 控制台错误 + 截图 */
 const puppeteer = require('puppeteer');
 
+let pageRef = null;   // 失败时也要清理测试账号/房间
+
 (async () => {
   const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
   const page = await browser.newPage();
+  pageRef = page;
   await page.setViewport({ width: 1280, height: 800 });
 
   const logs = [];
@@ -89,7 +92,7 @@ const puppeteer = require('puppeteer');
   await page.waitForSelector('.up-dialog [data-act=create]', { timeout: 15000 });
   await page.click('.up-dialog [data-act=create]');
   await page.waitForSelector('.rm-in-name', { timeout: 10000 });
-  await page.type('.rm-in-name', 'dbg房' + Date.now().toString().slice(-4));
+  await page.type('.rm-in-name', 'dbg房' + uname.slice(3));
   await page.type('.rm-in-pass', 'pass1234');
   await page.type('.rm-in-pass2', 'pass1234');
   await page.click('.up-dialog [data-act=ok]');
@@ -168,6 +171,19 @@ const puppeteer = require('puppeteer');
     userChipHidden: document.getElementById('user-chip') ? document.getElementById('user-chip').hidden : 'no-chip',
   })));
 
+  // 清理：注销测试账号（级联删除其房间、成员关系与数据），不留垃圾房间
+  try {
+    await page.evaluate(() => window.AUTH.sb.rpc('delete_own_account'));
+    logs.push('测试账号已注销清理');
+  } catch (e) { logs.push('清理失败: ' + e.message); }
+
   console.log(logs.join('\n'));
   await browser.close();
-})().catch(e => { console.error('DEBUG FAIL:', e.message); process.exit(1); });
+})().catch(async e => {
+  console.error('DEBUG FAIL:', e.message);
+  if (pageRef) {
+    try { await pageRef.evaluate(() => window.AUTH.sb.rpc('delete_own_account')); console.log('失败路径已清理测试账号'); }
+    catch (_) { }
+  }
+  process.exit(1);
+});
