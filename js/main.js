@@ -48,10 +48,34 @@
     })();
   }
 
+  // ---------- 版本自检：旧缓存页面提示刷新 ----------
+  function checkBuildVersion() {
+    try {
+      fetch('js/config.js?_=' + Date.now(), { cache: 'no-store' })
+        .then(r => r.ok ? r.text() : null)
+        .then(txt => {
+          if (!txt) return;
+          const m = txt.match(/APP_BUILD\s*=\s*['"]([^'"]+)['"]/);
+          const remote = m && m[1];
+          if (remote && remote !== window.APP_BUILD) {
+            const bar = document.createElement('div');
+            bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99998;' +
+              'background:#ffb74d;color:#231604;text-align:center;padding:9px 14px;' +
+              'font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.05em;';
+            bar.textContent = '✨ 检测到新版本，点击此处立即刷新加载';
+            bar.onclick = () => location.reload();
+            document.body.appendChild(bar);
+          }
+        })
+        .catch(() => { });   // 离线/断网时静默忽略
+    } catch (e) { }
+  }
+
   // ---------- 流程 ----------
   function boot() {
     coverStars();
     window.MEM.init();
+    checkBuildVersion();
 
     // 云端功能（认证 + 房间 + 走马灯）；CDN 失败或未配置时自动降级为纯个人模式
     try { window.AUTH.init(); } catch (e) { console.warn('AUTH 初始化失败：', e); }
