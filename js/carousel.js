@@ -177,6 +177,13 @@
       badge.textContent = `${+m}/${+d}`;
       card.appendChild(badge);
     }
+    // 实况照片标记：走马灯里不自动播放（三行同时在跑，解码开销太大），点开大图才动
+    if (p.video || p.video_url) {
+      const live = document.createElement('span');
+      live.className = 'car-live';
+      live.textContent = 'LIVE';
+      card.appendChild(live);
+    }
     if (p.uploader_name) {
       const who = document.createElement('span');
       who.className = 'car-who';

@@ -2,9 +2,10 @@
  * 存储策略：
  *   - 索引（哪些地点有记忆、各几张）→ localStorage（同步读取，供地图高亮）
  *   - 照片本体（Blob）→ IndexedDB（不占用 localStorage 5MB 配额）
- * 照片字段：{ id, blob, cap, ts, date }
+ * 照片字段：{ id, blob, video?, cap, ts, date }
  *   - ts   上传时间戳（兜底排序用）
  *   - date 'YYYY-MM-DD' 拍摄日期（可选，默认为文件的最后修改时间）
+ *   - video 实况照片的动态部分（Blob，可选）；没有这个字段就是普通照片
  */
 (function () {
   'use strict';
@@ -12,7 +13,10 @@
   const INDEX_KEY = 'travel_memory_index_v1';
   const DB_NAME = 'travel_memory_db';
   const STORE = 'photos';
-  const CACHE_STORE = 'room_cache';   // 房间照片 Blob 缓存（key = 照片 uuid）
+  const CACHE_STORE = 'room_cache';   // 房间照片 Blob 缓存（key = 照片 uuid；'vid:'+uuid = 实况视频）
+  const VIDEO_EXT = new Set(['mov', 'mp4', 'm4v', 'webm', 'qt']);
+  const HEIC_EXT = new Set(['heic', 'heif', 'hif']);   // 浏览器普遍解不了，导入时提示用户先转 JPG
+  const MAX_VIDEO_BYTES = 60 * 1024 * 1024;   // 单个实况视频上限，超出则退化为静图
 
   let db = null;
   let currentKey = null;   // 当前照片墙的地点 key
@@ -228,6 +232,90 @@
     el.style.opacity = 1;
   }
 
+  // ---------- 实况照片播放 ----------
+  // 卡片上默认显示静态帧；鼠标移入（桌面）自动播放并循环，移出暂停回到静图；
+  // 触屏点按 LIVE 角标切换播放/暂停（手机上 hover 不可用）。
+  // 视频元素按需创建，未播过的卡片不占解码资源。
+  let liveCards = [];
+
+  function releaseLives() {
+    liveCards.forEach(c => { try { c.destroy(); } catch (e) { } });
+    liveCards = [];
+  }
+
+  function bindLive(card, p) {
+    let videoEl = null;
+    let url = null;
+    let destroyed = false;
+
+    const badge = document.createElement('span');
+    badge.className = 'live-badge';
+    badge.textContent = 'LIVE';
+    badge.title = '实况照片，点按播放';
+    card.appendChild(badge);
+    card.classList.add('is-live');
+
+    function ensureVideo() {
+      if (videoEl) return videoEl;
+      url = URL.createObjectURL(p.video);
+      videoEl = document.createElement('video');
+      videoEl.className = 'live-video';
+      videoEl.src = url;
+      videoEl.loop = true;
+      videoEl.muted = true;
+      videoEl.defaultMuted = true;
+      videoEl.playsInline = true;
+      videoEl.setAttribute('muted', '');
+      videoEl.setAttribute('playsinline', '');
+      videoEl.setAttribute('webkit-playsinline', '');
+      videoEl.preload = 'none';
+      // 播放失败（编码不支持等）就静默退化成静态照片
+      videoEl.addEventListener('error', () => { stop(); badge.style.display = 'none'; });
+      card.appendChild(videoEl);
+      return videoEl;
+    }
+
+    function play() {
+      if (destroyed) return;
+      const v = ensureVideo();
+      card.classList.add('live-playing');
+      const pr = v.play();
+      if (pr && pr.catch) pr.catch(() => { card.classList.remove('live-playing'); });
+    }
+    function stop() {
+      card.classList.remove('live-playing');
+      if (videoEl) { try { videoEl.pause(); videoEl.currentTime = 0; } catch (e) { } }
+    }
+
+    // 桌面：悬停即播
+    card.addEventListener('pointerenter', e => {
+      if (e.pointerType === 'mouse') play();
+    });
+    card.addEventListener('pointerleave', e => {
+      if (e.pointerType === 'mouse') stop();
+    });
+
+    // 触屏：点 LIVE 角标切换，且不触发打开大图
+    badge.addEventListener('click', e => {
+      e.stopPropagation();
+      if (card.classList.contains('live-playing')) stop();
+      else play();
+    });
+    badge.addEventListener('pointerdown', e => e.stopPropagation());
+
+    const entry = {
+      destroy() {
+        destroyed = true;
+        stop();
+        if (url) { URL.revokeObjectURL(url); url = null; }
+        if (videoEl && videoEl.parentNode) videoEl.parentNode.removeChild(videoEl);
+        videoEl = null;
+      }
+    };
+    liveCards.push(entry);
+    return entry;
+  }
+
   function photoCard(p) {
     const card = document.createElement('div');
     card.className = 'photo-card';
@@ -235,6 +323,9 @@
     img.src = URL.createObjectURL(p.blob);
     img.loading = 'lazy';
     card.appendChild(img);
+
+    // 实况照片：悬停（桌面）/ 点按 LIVE 角标（手机）播放，移开或再次点按回到静图
+    if (p.video) bindLive(card, p);
 
     // 日期角标（左上，常显）
     if (p.date) {
@@ -307,6 +398,7 @@
     // 本地模式：同步索引计数（房间模式索引由 ROOMS 维护）
     if (currentBackend.mode === 'local') updateIndexFrom(currentKey, photoCache.length);
     const g = grid();
+    releaseLives();          // 旧卡片的视频 objectURL 先释放，避免重渲染泄漏
     g.innerHTML = '';
     empty().style.display = photoCache.length ? 'none' : 'flex';
     if (!photoCache.length) return;
@@ -374,35 +466,89 @@
     });
   }
 
+  // ---------- 实况照片配对 ----------
+  // iPhone 导出的实况照片是一对同名文件：IMG_1234.JPG + IMG_1234.MOV
+  // 按「去掉扩展名后的文件名」配对，大小写不敏感。
+  function fileBase(name) {
+    return String(name || '').replace(/\.[^.]+$/, '').toLowerCase();
+  }
+
+  function splitPairs(files) {
+    const images = [];
+    const videos = new Map();
+    files.forEach(f => {
+      const ext = (String(f.name).split('.').pop() || '').toLowerCase();
+      if (f.type.startsWith('image/')) images.push(f);
+      else if (f.type.startsWith('video/') || VIDEO_EXT.has(ext)) videos.set(fileBase(f.name), f);
+    });
+    const pairs = images.map(img => {
+      const key = fileBase(img.name);
+      const video = videos.get(key) || null;
+      videos.delete(key);
+      return { img, video };
+    });
+    return { pairs, orphanVideos: videos.size };
+  }
+
   // ---------- 上传 ----------
   async function handleFiles(files) {
     if (!files || !files.length) return;
-    const imgs = Array.from(files).filter(f => f.type.startsWith('image/'));
-    if (!imgs.length) return;
+    const { pairs, orphanVideos } = splitPairs(Array.from(files));
+    if (!pairs.length) {
+      if (orphanVideos) {
+        alert('实况照片需要「同名的照片 + 视频」一起选择：\n' +
+          'iPhone 导出时请同时选中 IMG_1234.JPG 和 IMG_1234.MOV。\n' +
+          '（只选了视频的话，把对应的照片一起拖进来即可）');
+      }
+      return;
+    }
+    const imgs = pairs;
+    const liveCount = imgs.filter(p => p.video).length;
 
     // 默认日期取第一张文件的最后修改时间（通常≈拍摄时间）
-    const lastMod = new Date(imgs[0].lastModified || Date.now());
+    const lastMod = new Date(imgs[0].img.lastModified || Date.now());
     const defDate = lastMod.toISOString().slice(0, 10);
     const res = await openUploadDialog({
-      title: imgs.length > 1 ? `添加 ${imgs.length} 张照片` : '添加照片',
+      title: imgs.length > 1
+        ? `添加 ${imgs.length} 张照片${liveCount ? `（${liveCount} 张实况）` : ''}`
+        : (liveCount ? '添加实况照片' : '添加照片'),
       date: defDate,
       okText: '保存到照片墙'
     });
     if (!res) return;
 
+    let skippedVideo = 0, skippedHeic = 0;
     const items = [];
-    for (const f of imgs) {
+    for (const pair of imgs) {
+      const f = pair.img;
       const blob = await shrink(f);
+      if (!blob) { skippedHeic++; continue; }   // HEIC 解不了，跳过
+      // 视频原样保存（浏览器原生解码）；超过上限则退化为静图
+      let video = null;
+      if (pair.video) {
+        if (pair.video.size > MAX_VIDEO_BYTES) skippedVideo++;
+        else video = pair.video;
+      }
       const lm = f.lastModified ? new Date(f.lastModified).toISOString().slice(0, 10) : res.date;
-      items.push({
+      const item = {
         id: 'p' + Date.now() + Math.random().toString(36).slice(2, 7),
         blob,
         cap: res.cap || '',
         ts: Date.now(),
         // 单张时用户填的日期优先；多张时各自用文件修改日期，用户填的作为兜底
         date: (imgs.length === 1 ? res.date : (res.date && res.date !== defDate ? res.date : lm)) || ''
-      });
+      };
+      if (video) item.video = video;
+      items.push(item);
     }
+    if (skippedHeic) {
+      alert(`有 ${skippedHeic} 张 HEIC 照片浏览器无法解码，已跳过。\n` +
+        'iPhone 导出时请选「兼容性最佳」或用「导出未修改的原片」得到 JPG。');
+    }
+    if (skippedVideo) {
+      alert(`有 ${skippedVideo} 个实况视频超过 ${Math.round(MAX_VIDEO_BYTES / 1048576)}MB，已按普通照片保存。`);
+    }
+    if (!items.length) return;
 
     if (currentBackend.mode === 'room') {
       // 云端上传：带进度提示，成功后 store 已在 backend.addPhotos 内重建
@@ -421,6 +567,7 @@
   }
 
   // 压缩到最长边 1600px，节省空间
+  // 解码失败且是 HEIC/HEIF 时返回 null：浏览器解不了这种格式，不能当成照片存进去
   function shrink(file) {
     return new Promise(resolve => {
       const img = new Image();
@@ -437,7 +584,11 @@
         c.toBlob(b => resolve(b || file), 'image/jpeg', 0.86);
         URL.revokeObjectURL(img.src);
       };
-      img.onerror = () => resolve(file);
+      img.onerror = () => {
+        const ext = (String(file.name || '').split('.').pop() || '').toLowerCase();
+        // HEIC 只能由 Safari 解；其它浏览器一律当作不支持
+        resolve(HEIC_EXT.has(ext) ? null : file);
+      };
       img.src = URL.createObjectURL(file);
     });
   }
@@ -446,6 +597,7 @@
   let lbList = [];      // 当前大图浏览的照片列表
   let lbIndex = -1;
   let lbUrl = null;     // 仅 blob 照片创建的 objectURL 需要释放
+  let lbVidUrl = null;  // 实况视频的 objectURL
 
   function openLightbox(p) {
     openLightboxList(photoCache, photoCache.indexOf(p));
@@ -464,12 +616,15 @@
     lbIndex = (i + lbList.length) % lbList.length;
     const p = lbList[lbIndex];
     if (lbUrl) { URL.revokeObjectURL(lbUrl); lbUrl = null; }
+    stopLightboxVideo();
     if (p.blob) {
       lbUrl = URL.createObjectURL(p.blob);
       $('lightbox-img').src = lbUrl;
     } else if (p.url) {
       $('lightbox-img').src = p.url;   // 房间照片走马灯：签名 URL 直读
     }
+    // 实况照片：大图里自动循环播放动态部分
+    setLightboxVideo(p.video || p.video_url || null);
     const capParts = [];
     if (p.date) capParts.push(fmtDate(p.date));
     if (p.cap) capParts.push(p.cap);
@@ -483,9 +638,47 @@
     $('lightbox-next').style.display = showNav ? '' : 'none';
   }
 
+  // 设置大图里的动态部分：传 Blob 或直链 URL，传 null 则回到静图
+  function setLightboxVideo(src) {
+    const vid = $('lightbox-video');
+    const img = $('lightbox-img');
+    if (!vid) return;
+    try { vid.pause(); } catch (e) { }
+    vid.removeAttribute('src');
+    try { vid.load(); } catch (e) { }
+    vid.style.display = 'none';
+    if (img) img.style.display = '';
+    if (!src) return;
+    if (typeof src === 'string') {
+      vid.src = src;
+    } else {
+      lbVidUrl = URL.createObjectURL(src);
+      vid.src = lbVidUrl;
+    }
+    vid.style.display = '';
+    if (img) img.style.display = 'none';   // 视频盖在静图上，避免两张并排
+    // 解码不了（如 iPhone 的 HEVC 视频在不支持的浏览器里）→ 回退到静图
+    vid.onerror = () => {
+      vid.style.display = 'none';
+      if (img) img.style.display = '';
+    };
+    const pr = vid.play();
+    if (pr && pr.catch) pr.catch(() => {
+      vid.style.display = 'none';
+      if (img) img.style.display = '';
+    });
+  }
+
+  function stopLightboxVideo() {
+    const vid = $('lightbox-video');
+    if (vid) { try { vid.pause(); } catch (e) { } }
+    if (lbVidUrl) { URL.revokeObjectURL(lbVidUrl); lbVidUrl = null; }
+  }
+
   function closeLightbox() {
     $('lightbox').classList.remove('open');
     if (lbUrl) { URL.revokeObjectURL(lbUrl); lbUrl = null; }
+    stopLightboxVideo();
     lbIndex = -1;
     lbList = [];
   }

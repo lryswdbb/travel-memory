@@ -65,17 +65,27 @@
         // 走马灯用：批量签名 URL（不下载 blob，img 懒加载按需取）
         const rows = metaRows.slice();
         const paths = rows.map(r => r.storage_path);
-        let urls = null;
+        const vidPaths = rows.filter(r => r.video_path).map(r => r.video_path);
+        let urls = null, vidUrls = null;
         if (paths.length) {
           const { data, error } = await sb().storage.from('room-photos')
             .createSignedUrls(paths, 60 * 60 * 2);
           if (!error && data) urls = data;
         }
+        if (vidPaths.length) {
+          const { data, error } = await sb().storage.from('room-photos')
+            .createSignedUrls(vidPaths, 60 * 60 * 2);
+          if (!error && data) vidUrls = data;
+        }
+        const vidMap = {};
+        if (vidUrls) vidPaths.forEach((p, i) => { vidMap[p] = (vidUrls[i] && vidUrls[i].signedUrl) || null; });
         return rows.map((r, i) => ({
           id: r.id, locKey: r.loc_key, cap: r.cap, ts: Number(r.ts), date: r.shoot_date || '',
           uploader_id: r.uploader_id, uploader_name: r.uploader_name,
           url: (urls && urls[i] && urls[i].signedUrl) || null,
+          video_url: (r.video_path && vidMap[r.video_path]) || null,
           storage_path: r.storage_path,
+          video_path: r.video_path || '',
         }));
       },
 
@@ -91,21 +101,37 @@
           const { error: upErr } = await sb().storage.from('room-photos')
             .upload(path, it.blob, { contentType: 'image/jpeg' });
           if (upErr) throw new Error('照片上传失败：' + upErr.message);
+
+          // 实况照片：视频单独存一份，失败则退化为普通照片（不阻断整批上传）
+          let videoPath = '';
+          if (it.video) {
+            const vpath = `${ctx.roomId}/${id}.mp4`;
+            const { error: vErr } = await sb().storage.from('room-photos')
+              .upload(vpath, it.video, { contentType: it.video.type || 'video/mp4' });
+            if (vErr) console.warn('实况视频上传失败，按普通照片保存：', vErr.message);
+            else videoPath = vpath;
+          }
+
           const row = {
             id, room_id: ctx.roomId, loc_key: key,
             uploader_id: u.id, uploader_name: window.AUTH.displayName(u),
             cap: it.cap || '', shoot_date: it.date || '', ts: it.ts || Date.now(),
-            storage_path: path,
+            storage_path: path, video_path: videoPath,
           };
           const { error: insErr } = await sb().from('photos').insert(row);
           if (insErr) {
             // 回滚已传的文件，避免孤儿对象
-            sb().storage.from('room-photos').remove([path]).catch(() => { });
+            const rollback = [path];
+            if (videoPath) rollback.push(videoPath);
+            sb().storage.from('room-photos').remove(rollback).catch(() => { });
             throw new Error('照片登记失败：' + insErr.message);
           }
           metaRows.push(row);
           // 顺手写本地缓存：上传的照片离线也能看
           try { await window.MEM.cachePut(id, it.blob); } catch (e) { }
+          if (videoPath) {
+            try { await window.MEM.cachePut('vid:' + id, it.video); } catch (e) { }
+          }
         }
         window.MEM.store = this.buildStore();
       },
@@ -122,11 +148,13 @@
       async deletePhoto(p) {
         const { error } = await sb().from('photos').delete().eq('id', p.id);
         if (error) throw new Error('删除失败：' + error.message);
-        if (p.storage_path) {
-          sb().storage.from('room-photos').remove([p.storage_path]).catch(() => { });
+        const paths = [p.storage_path, p.video_path].filter(Boolean);
+        if (paths.length) {
+          sb().storage.from('room-photos').remove(paths).catch(() => { });
         }
         metaRows = metaRows.filter(r => r.id !== p.id);
         try { await window.MEM.cacheDel(p.id); } catch (e) { }
+        try { await window.MEM.cacheDel('vid:' + p.id); } catch (e) { }
         window.MEM.store = this.buildStore();
       },
 
@@ -148,10 +176,24 @@
       blob = data;
       try { window.MEM.cachePut(r.id, blob); } catch (e) { }
     }
+    // 实况照片：动态部分也按需下载并缓存；失败就算了（退化为静图）
+    let video = null;
+    if (r.video_path) {
+      try { video = await window.MEM.cacheGet('vid:' + r.id); } catch (e) { }
+      if (!video) {
+        const { data, error } = await sb().storage.from('room-photos').download(r.video_path);
+        if (!error && data) {
+          video = data;
+          try { window.MEM.cachePut('vid:' + r.id, video); } catch (e) { }
+        } else {
+          console.warn('实况视频下载失败：', r.id, error && error.message);
+        }
+      }
+    }
     return {
-      id: r.id, blob, cap: r.cap, ts: Number(r.ts), date: r.shoot_date || '',
+      id: r.id, blob, video, cap: r.cap, ts: Number(r.ts), date: r.shoot_date || '',
       uploader_id: r.uploader_id, uploader_name: r.uploader_name,
-      storage_path: r.storage_path,
+      storage_path: r.storage_path, video_path: r.video_path || '',
     };
   }
 
@@ -160,7 +202,7 @@
   // ============================================================
   async function fetchMeta(roomId) {
     const { data, error } = await sb().from('photos')
-      .select('id,room_id,loc_key,uploader_id,uploader_name,cap,shoot_date,ts,storage_path')
+      .select('id,room_id,loc_key,uploader_id,uploader_name,cap,shoot_date,ts,storage_path,video_path')
       .eq('room_id', roomId);
     if (error) throw new Error('读取房间照片失败：' + error.message);
     metaRows = data || [];

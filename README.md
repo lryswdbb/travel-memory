@@ -33,7 +33,10 @@ node server.js
 5. **美国** —— 点击州进入县（County）地图，再点击县进入照片墙
 6. **其他国家** —— 点击省/州板块进入照片墙；悬停和照片墙标题显示中文名（如 Kyoto · 京都府）
 7. **照片墙** —— 「+ 添加照片」或直接把图片拖进页面上传；照片按拍摄日期分成月份时间线，
-   左上角有日期角标；点击照片看大图，**←/→ 键或两侧按钮翻页**，✕ 删除，✎ 改备注/日期
+   左上角有日期角标；点击照片看大图，**←/→ 键或两侧按钮翻页**，✕ 删除，✎ 改备注/日期；
+   <br>**实况照片 (LIVE)** —— 一次选中同名的 `IMG_1234.JPG` + `IMG_1234.MOV`（iPhone 导出实况照片的
+   标准形式），会自动配对成一张实况记忆：卡片左上角显示 LIVE 角标，桌面**鼠标悬停即播放**、
+   移开回到静图，手机上**点 LIVE 角标**播放/暂停，点开大图则自动循环播放
 8. **足迹** —— 地图页右上「足迹」进入统计总览：照片/国家/省份/城市计数、点亮的世界地图、记忆最多的地方排行
 9. **走马灯 🎞** —— 地图页或照片墙点 🎞：三行照片错速自动滚动；
    **鼠标按住拖动**可拉动，快速甩动松手带惯性滑行；悬停暂停；点击照片进大图；
@@ -62,6 +65,8 @@ node server.js
 4. **建表**：**SQL Editor** → New query → 把 `supabase/schema.sql` 全文粘贴 → Run。
    这一步创建 rooms / room_members / photos 三张表、行级安全策略、
    四个 RPC 函数、Realtime 发布，以及私有存储桶 `room-photos`。
+   <br>**已有项目升级**：如果之前已经跑过旧版 schema，改跑 `supabase/migrate_live_photo.sql`
+   （给 photos 加 `video_path` 列、放行视频上传、注销时连带删视频），不要重复跑整个 schema。
 
 完成后刷新网站，房间栏就会出现「登录 ▾」。若 CDN 加载 supabase-js 失败或配置未填，
 网站会自动隐藏房间功能、退回纯个人模式，不影响任何本地使用。
@@ -69,8 +74,12 @@ node server.js
 ## 数据存储
 
 - **个人模式**：照片本体存在浏览器 **IndexedDB**（本地，不上传任何服务器），上传时自动压缩到最长边 1600px
+- **实况照片**：静态帧与普通照片一样压缩成 JPEG；动态部分（MOV/MP4）**原样保存**，不做转码。
+  单个视频上限 60MB，超出则退化为普通照片。iPhone 的实况视频多是 HEVC 编码，
+  Chrome/Android 可能解不了——解不了时卡片自动回退成静图，不会报错
 - **房间模式**：照片上传到 Supabase 私有存储桶（每张压缩后约 300KB，免费 1GB ≈ 3000+ 张），
-  元数据（地点/日期/备注/上传者）存 Postgres；成员浏览时经权限校验下载，并缓存在本机 IndexedDB
+  实况视频另存为 `<room_id>/<photo_id>.mp4`（体积通常是照片的 1~2 倍）；
+  元数据（地点/日期/备注/上传者/视频路径）存 Postgres；成员浏览时经权限校验下载，并缓存在本机 IndexedDB
 - 房间密码只保存 SHA-256(随机盐+密码) 的哈希在服务端，比对在数据库函数内完成，任何人（包括站长）都拿不到明文
 - 「哪些地点有记忆」的索引存在 localStorage，用于地图高亮
 - 清空浏览器数据 = 清空个人照片（房间照片在云端不受影响），重要照片请自行备份原图
@@ -88,18 +97,21 @@ travel-memory/
 │   ├── config.js         # Supabase URL / anon key（云端配置时填写）
 │   ├── warp.js           # 星际穿梭 + 抵达态可交互地球（three.js：拖拽旋转/滚轮缩放）
 │   ├── map.js            # 多级地图（echarts：世界/中国省市/美国州县/全球省州）
-│   ├── gallery.js        # 照片墙 + 日期时间线 + 大图翻页 + IndexedDB 存储 + 上传压缩 + 后端抽象
+│   ├── gallery.js        # 照片墙 + 日期时间线 + 大图翻页 + IndexedDB 存储 + 上传压缩 + 实况照片配对/播放 + 后端抽象
 │   ├── auth.js           # 用户名 + 密码登录（Supabase，用户名派生账号，无邮件依赖）
 │   ├── rooms.js          # 云端房间：创建/加入/退出、房间栏、照片云同步（Realtime + 轮询兜底）
 │   ├── carousel.js       # 照片走马灯：三行错速滚动、拖拽甩动、日期筛选
 │   ├── stats.js          # 足迹统计总览页
 │   └── landmarks.js      # 各地标图片清单（Wikimedia Commons）
-├── supabase/schema.sql   # 云端数据库结构（SQL Editor 一次性运行）
+├── supabase/
+│   ├── schema.sql        # 云端数据库结构（新项目一次性运行）
+│   └── migrate_live_photo.sql  # 已有项目升级到实况照片支持的迁移脚本
 ├── assets/               # three.js / echarts / topojson 库 + 地球贴图
 ├── data/js/              # 全部地图边界数据（已转成 .js，双击 html 也能用）
 │   └── prov_<iso>.js     # 全球 239 国省/州边界（map.js 按需懒加载；prov_index.js 为名称索引）
 └── tools/                # 本地开发/测试脚本（headless 冒烟测试与截图，不参与产品运行）
-    └── build_provinces.js # Natural Earth → prov_*.js 一次性构建脚本
+    ├── build_provinces.js # Natural Earth → prov_*.js 一次性构建脚本
+    └── test_live_photo.js # 实况照片冒烟测试（node tools/test_live_photo.js）
 ```
 
 ## 数据来源

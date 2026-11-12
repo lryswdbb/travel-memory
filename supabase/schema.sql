@@ -32,6 +32,7 @@ create table public.photos (
   shoot_date    text not null default '',      -- 'YYYY-MM-DD' 或 ''
   ts            bigint not null default (extract(epoch from now()) * 1000)::bigint,
   storage_path  text not null,                 -- '<room_id>/<photo_id>.jpg'
+  video_path    text not null default '',      -- 实况照片的动态部分 '<room_id>/<photo_id>.mp4'；空 = 普通照片
   created_at    timestamptz not null default now()
 );
 create index on public.photos (room_id, loc_key);
@@ -141,7 +142,7 @@ create policy "rp_select" on storage.objects for select
 -- <room_id>/<photo_id>.jpg 的 [2] 是 NULL，不能用它判断扩展名，须直接检查 name
 create policy "rp_insert" on storage.objects for insert
   with check (bucket_id = 'room-photos' and public.is_room_member(((storage.foldername(name))[1])::uuid)
-              and name like '%.jpg');
+              and (name like '%.jpg' or name like '%.mp4' or name like '%.mov' or name like '%.webm'));
 create policy "rp_delete" on storage.objects for delete
   using (bucket_id = 'room-photos' and public.is_room_member(((storage.foldername(name))[1])::uuid)
          and (owner::text = auth.uid()::text or public.is_room_owner(((storage.foldername(name))[1])::uuid)));
@@ -158,8 +159,12 @@ declare
   paths text[];
 begin
   if uid is null then raise exception 'not authenticated'; end if;
-  select coalesce(array_agg(storage_path), '{}') into paths
-    from photos where uploader_id = uid;
+  select coalesce(array_agg(p), '{}') into paths
+    from (
+      select storage_path as p from photos where uploader_id = uid
+      union all
+      select video_path from photos where uploader_id = uid and video_path <> ''
+    ) t;
   if cardinality(paths) > 0 then
     delete from storage.objects
      where bucket_id = 'room-photos' and name = any(paths);
