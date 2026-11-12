@@ -422,6 +422,12 @@
 
   function updateIndex() { updateIndexFrom(currentKey, photoCache.length); }
 
+  // 地理名称来自地图数据，插入 innerHTML 前必须转义
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
   // ---------- 上传信息弹窗（备注 + 拍摄日期） ----------
   let dialogEl = null;
   function openUploadDialog(opts) {
@@ -430,9 +436,16 @@
       if (dialogEl) dialogEl.remove();
       dialogEl = document.createElement('div');
       dialogEl.className = 'up-dialog';
+      // 存入位置：照片按「当前地图停在哪一层」归桶，这里明确告知，避免存错地方
+      const willSave = o.showPreview ? '' : (currentName || currentKey || '');
       dialogEl.innerHTML = `
         <div class="up-panel">
           <h3>${o.title || '添加照片信息'}</h3>
+          ${willSave ? `<div class="up-loc">
+            <span class="up-loc-label">存入位置</span>
+            <span class="up-loc-name">${escapeHtml(willSave)}</span>
+            <span class="up-loc-hint">照片会归到这里。位置不对请先返回地图，点到正确的地方再上传。</span>
+          </div>` : ''}
           ${o.showPreview ? '<img class="up-preview" alt="">' : ''}
           <label>备注 <input type="text" class="up-cap" placeholder="这一刻的心情…" maxlength="60"></label>
           <label>拍摄日期 <input type="date" class="up-date"></label>
