@@ -134,6 +134,22 @@
       await idbPut(currentKey, list);
       updateIndexFrom(currentKey, list.length);
     },
+    // 把 fromKey 下的照片整体搬到 toKey（ids 省略 = 全部）。返回实际搬走的张数。
+    async movePhotos(fromKey, toKey, ids) {
+      if (!fromKey || !toKey || fromKey === toKey) return 0;
+      const src = await idbGet(fromKey);
+      const picked = ids && ids.length ? src.filter(x => ids.includes(x.id)) : src.slice();
+      if (!picked.length) return 0;
+      const pickedIds = new Set(picked.map(x => x.id));
+      const rest = src.filter(x => !pickedIds.has(x.id));
+      const dst = await idbGet(toKey);
+      dst.push(...picked);
+      await idbPut(toKey, dst);
+      await idbPut(fromKey, rest);
+      updateIndexFrom(toKey, dst.length);
+      updateIndexFrom(fromKey, rest.length);
+      return picked.length;
+    },
     canEdit() { return true; },
     async getAllPhotos() {
       // 走马灯：聚合本地所有地点的照片
@@ -479,6 +495,115 @@
     });
   }
 
+  // ---------- 整理：把归错地点的照片搬到别处 ----------
+  // 照片按「地图当前层级」归桶，位置点错就会整批存进错误地点。
+  // 这里提供整桶搬迁，把照片挪回正确的地方（不必重新上传）。
+  function openMoveDialog() {
+    if (!currentKey) return;
+    const store = loadStoreCounts();
+    const here = store[currentKey] || 0;
+    if (!here) { alert('这个地点还没有照片，没什么可整理的。'); return; }
+
+    const others = Object.keys(store)
+      .filter(k => k !== currentKey && store[k] > 0)
+      .sort((a, b) => store[b] - store[a]);
+
+    const opts = others.map(k =>
+      `<option value="${escapeHtml(k)}">${escapeHtml(prettyKey(k))}（${store[k]} 张）</option>`
+    ).join('');
+
+    const el = document.createElement('div');
+    el.className = 'up-dialog';
+    el.innerHTML = `
+      <div class="up-panel mv-panel">
+        <h3>整理照片位置</h3>
+        <div class="mv-row">
+          <span class="mv-label">当前位置</span>
+          <span class="mv-cur">${escapeHtml(currentName || currentKey)}</span>
+          <span class="mv-count">${here} 张</span>
+        </div>
+        <p class="mv-hint">
+          把这些照片整体搬到另一个地点。照片不会重新上传，只是换一个归属，
+          地图上的金色高亮和足迹统计会跟着更新。
+        </p>
+        <label>搬到
+          <select class="mv-sel">
+            ${opts || '<option value="">（还没有其它地点有照片）</option>'}
+            <option value="__custom__">＋ 其他地点（手动输入）</option>
+          </select>
+        </label>
+        <label class="mv-custom-row" hidden>目标地点 key
+          <input type="text" class="mv-custom" placeholder="例如 cn:310000:上海市 或 world:Japan">
+        </label>
+        <p class="mv-note">
+          提示：地点 key 的格式是 <code>世界</code> / <code>cn:省份adcode:城市名</code> /
+          <code>cn_prov:省名</code> / <code>us_state:州名</code> / <code>us:州名:县名</code> /
+          <code>prov:国家代码:省名</code>。拿不准的话，先在地图上点到正确地点，
+          看一眼照片墙地址栏，或者直接在那边传一张照片，再回到这里从下拉框里选。
+        </p>
+        <div class="mv-err"></div>
+        <div class="up-btns">
+          <button class="up-cancel">取消</button>
+          <button class="up-ok">移动</button>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+
+    const sel = el.querySelector('.mv-sel');
+    const customRow = el.querySelector('.mv-custom-row');
+    const customIn = el.querySelector('.mv-custom');
+    const err = m => { el.querySelector('.mv-err').textContent = m || ''; };
+
+    sel.onchange = () => {
+      const custom = sel.value === '__custom__';
+      customRow.hidden = !custom;
+      if (custom) setTimeout(() => customIn.focus(), 30);
+    };
+
+    const close = () => { el.remove(); };
+    el.querySelector('.up-cancel').onclick = close;
+    el.onclick = e => { if (e.target === el) close(); };
+    el.querySelector('.up-ok').onclick = async () => {
+      const target = sel.value === '__custom__' ? customIn.value.trim() : sel.value;
+      if (!target) return err('请选择或填写目标地点');
+      if (target === currentKey) return err('目标地点和当前位置相同');
+
+      const okBtn = el.querySelector('.up-ok');
+      okBtn.disabled = true; okBtn.textContent = '移动中…';
+      err('');
+      try {
+        const n = await currentBackend.movePhotos(currentKey, target);
+        close();
+        if (window.ROOMS) window.ROOMS.toast(`已移动 ${n} 张照片`);
+        await renderPhotos();
+        window.MEM.store = currentBackend.mode === 'local'
+          ? loadIndex() : (currentBackend.buildStore ? currentBackend.buildStore() : window.MEM.store);
+        if (window.MAP && window.MAP.refreshHighlight) window.MAP.refreshHighlight();
+      } catch (e) {
+        okBtn.disabled = false; okBtn.textContent = '移动';
+        err(String(e.message || e));
+      }
+    };
+  }
+
+  // 当前后端的 {地点: 张数}
+  function loadStoreCounts() {
+    if (currentBackend.mode === 'local') return loadIndex();
+    return (window.MEM && window.MEM.store) || {};
+  }
+
+  // 把内部 key 显示成人能读的文字（尽力而为，识别不了就原样显示）
+  function prettyKey(key) {
+    const parts = String(key).split(':');
+    if (parts[0] === 'cn' && parts.length >= 3) return `中国 · ${parts.slice(2).join(':')}（${parts[1]}）`;
+    if (parts[0] === 'cn_prov') return `中国 · ${parts.slice(1).join(':')}`;
+    if (parts[0] === 'us' && parts.length >= 3) return `美国 · ${parts[2]}（${parts[1]}）`;
+    if (parts[0] === 'us_state') return `美国 · ${parts.slice(1).join(':')}`;
+    if (parts[0] === 'prov' && parts.length >= 3) return `${parts[2]}（${parts[1]}）`;
+    if (parts[0] === 'world') return parts.slice(1).join(':');
+    return key;
+  }
+
   // ---------- 实况照片配对 ----------
   // iPhone 导出的实况照片是一对同名文件：IMG_1234.JPG + IMG_1234.MOV
   // 按「去掉扩展名后的文件名」配对，大小写不敏感。
@@ -733,6 +858,8 @@
     init() {
       openDB();
       $('btn-back').onclick = backToMap;
+      const mvBtn = $('btn-move');
+      if (mvBtn) mvBtn.onclick = openMoveDialog;
       $('file-input').onchange = e => { handleFiles(e.target.files); e.target.value = ''; };
       $('lightbox').onclick = e => {
         // 点在导航按钮上不关闭

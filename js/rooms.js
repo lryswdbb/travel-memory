@@ -163,6 +163,24 @@
         const u = _lastUser;
         return !!u && (p.uploader_id === u.id || (current && current.ownerId === u.id));
       },
+
+      // 整桶搬迁：把 fromKey 下的照片改成 toKey（改 loc_key，不动存储文件）
+      // RLS 限制：只能改自己上传的，或房主改房间内全部
+      async movePhotos(fromKey, toKey, ids) {
+        if (!fromKey || !toKey || fromKey === toKey) return 0;
+        const targets = metaRows.filter(r =>
+          r.loc_key === fromKey && (!ids || !ids.length || ids.includes(r.id)));
+        if (!targets.length) return 0;
+        const targetIds = targets.map(r => r.id);
+        const { error } = await sb().from('photos')
+          .update({ loc_key: toKey })
+          .in('id', targetIds);
+        if (error) throw new Error('移动失败：' + error.message);
+        const idSet = new Set(targetIds);
+        metaRows.forEach(r => { if (idSet.has(r.id)) r.loc_key = toKey; });
+        window.MEM.store = this.buildStore();
+        return targetIds.length;
+      },
     };
   }
 

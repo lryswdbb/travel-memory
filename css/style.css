@@ -402,6 +402,41 @@ body {
   font-size: 11.5px; line-height: 1.55;
   color: rgba(200,215,245,.62);
 }
+
+/* ============ 整理照片位置（搬家） ============ */
+.mv-panel { width: min(440px, 94vw); }
+.mv-row {
+  display: flex; align-items: baseline; gap: 9px;
+  padding: 10px 13px; margin-bottom: 13px;
+  border-radius: 9px;
+  background: rgba(90,120,220,.1);
+  border: 1px solid rgba(150,180,255,.28);
+}
+.mv-label { font-size: 11px; letter-spacing: .14em; color: rgba(200,215,245,.6); }
+.mv-cur { font-size: 14.5px; font-weight: 600; color: #dfe8ff; word-break: break-word; }
+.mv-count { margin-left: auto; font-size: 12.5px; color: #ffd98a; white-space: nowrap; }
+.mv-hint {
+  font-size: 12.5px; line-height: 1.65; margin-bottom: 15px;
+  color: rgba(200,215,245,.7);
+}
+.mv-panel select {
+  display: block; width: 100%; margin-top: 6px;
+  padding: 10px 12px; border-radius: 8px;
+  border: 1px solid rgba(150,180,255,.3);
+  background: rgba(8,12,30,.8); color: #e8ecf7;
+  font-size: 14px; color-scheme: dark;
+}
+.mv-panel select:focus { outline: none; border-color: rgba(160,190,255,.7); }
+.mv-note {
+  font-size: 11.5px; line-height: 1.7; margin-top: 2px;
+  color: rgba(170,190,225,.55);
+}
+.mv-note code {
+  background: rgba(150,180,255,.12);
+  padding: 1px 5px; border-radius: 4px;
+  font-size: 11px; color: #a8c0ff;
+}
+.mv-err { min-height: 18px; font-size: 12.5px; color: #ff9d9d; margin-top: 8px; }
 .up-panel label {
   display: block; margin-bottom: 14px;
   font-size: 13px; color: rgba(200,215,245,.75);
