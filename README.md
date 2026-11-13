@@ -37,8 +37,14 @@ node server.js
    <br>**实况照片 (LIVE)** —— 一次选中同名的 `IMG_1234.JPG` + `IMG_1234.MOV`（iPhone 导出实况照片的
    标准形式），会自动配对成一张实况记忆：卡片左上角显示 LIVE 角标，桌面**鼠标悬停即播放**、
    移开回到静图，手机上**点 LIVE 角标**播放/暂停，点开大图则自动循环播放
-   <br>**存入位置** —— 照片按「地图当前停在哪一层」归档，与图片 GPS 信息无关。
-   上传弹窗顶部会明确显示「存入位置」，位置不对请先返回地图点到正确的地方再上传
+   <br>**存入位置** —— 照片按「地图当前停在哪一层」归档。上传弹窗顶部会明确显示「存入位置」，
+   位置不对请先返回地图点到正确的地方再上传
+   <br>**GPS 自动归位** —— 照片自带 GPS 坐标时（手机拍的多数都有），上传会先读出拍摄地，
+   弹窗里提示「识别到拍摄地是 山东 · 青岛市」，默认按拍摄地归档；
+   一次选中多个地方的照片，会**按各自 GPS 分别存进对应地点**。不想用时选「还是存到当前位置」即可
+   <br>**导出备份 ⬇** —— 照片墙的 ⬇ 打开导出：把照片按「地点/日期_备注.jpg」整理好，
+   连同 `backup.json`（地点、备注、拍摄日期）打包成一个 ZIP 下载，或逐个文件保存。
+   清缓存、换设备、云端额度用尽时，这份备份能把记忆找回来
    <br>**整理位置 ⇄** —— 已经归错地点的照片不用重新上传：点照片墙的 ⇄ 打开「整理照片位置」，
    从下拉框里选一个已有照片的地点（或手动填 key），整个地点的照片会搬过去。
    搬家只改归属、不动文件，地图金色高亮和足迹统计会跟着刷新
@@ -73,8 +79,10 @@ node server.js
    <br>**已有项目升级**：如果之前已经跑过旧版 schema，改跑 `supabase/migrate_live_photo.sql`
    （给 photos 加 `video_path` 列、放行视频上传、注销时连带删视频），不要重复跑整个 schema。
 
-完成后刷新网站，房间栏就会出现「登录 ▾」。若 CDN 加载 supabase-js 失败或配置未填，
-网站会自动隐藏房间功能、退回纯个人模式，不影响任何本地使用。
+完成后刷新网站，房间栏就会出现「登录 ▾」。Supabase 客户端已**自托管**在 `assets/supabase.min.js`
+（不再依赖 jsdelivr，大陆网络更稳）；仅当该文件缺失时才会回退到 CDN。
+配置未填或云端连不上时，网站退回纯个人模式，并在页面底部提示「⚠ 云端未连接」，
+房间照片不会丢，联网后刷新即可。
 
 ## 数据存储
 
@@ -107,6 +115,9 @@ travel-memory/
 │   ├── rooms.js          # 云端房间：创建/加入/退出、房间栏、照片云同步（Realtime + 轮询兜底）
 │   ├── carousel.js       # 照片走马灯：三行错速滚动、拖拽甩动、日期筛选
 │   ├── stats.js          # 足迹统计总览页
+│   ├── exif.js           # 读照片 EXIF 里的 GPS 坐标（纯前端，无依赖）
+│   ├── geolocate.js      # 坐标 → 地点 key（点在多边形内判定，与地图层级一致）
+│   ├── export.js         # 导出备份：打包 ZIP / 逐文件下载 + backup.json
 │   └── landmarks.js      # 各地标图片清单（Wikimedia Commons）
 ├── supabase/
 │   ├── schema.sql        # 云端数据库结构（新项目一次性运行）
@@ -118,7 +129,10 @@ travel-memory/
     ├── build_provinces.js # Natural Earth → prov_*.js 一次性构建脚本
     ├── test_live_photo.js # 实况照片冒烟测试（node tools/test_live_photo.js）
     ├── test_move_photos.js # 照片整理（搬家）冒烟测试（node tools/test_move_photos.js）
-    └── test_scene_and_source.js # 场景切换 / 数据来源 / 云端掉线提示（node tools/test_scene_and_source.js）
+    ├── test_export.js     # 导出备份测试：ZIP 结构/CRC/backup.json（node tools/test_export.js）
+    ├── test_gps.js        # GPS 读取与自动归位测试（node tools/test_gps.js）
+    ├── test_scene_and_source.js # 场景切换 / 数据来源 / 云端掉线提示（node tools/test_scene_and_source.js）
+    └── cleanup_diag_accounts.js # 清理测试用临时账号与房间（node tools/cleanup_diag_accounts.js <用户名...>）
 ```
 
 ## 数据来源
@@ -160,6 +174,11 @@ travel-memory/
 - **个人照片与房间照片是两套独立数据**：房间里的照片存在云端（Supabase），个人模式的照片
   只存在当前浏览器。照片墙标题下方有来源标识（🏠 共享房间 / 📱 本机个人照片），
   看清再操作——在个人模式下删照片不会影响房间里的照片，反之亦然。
-- 云端依赖 `cdn.jsdelivr.net` 加载 Supabase 客户端。网络不通时会降级为个人模式，
-  页面底部会显示「⚠ 云端未连接」的提示，**房间照片不会丢**，联网后刷新即可看到。
+- 云端依赖自托管的 `assets/supabase.min.js`（早期版本走 jsdelivr CDN，大陆常被墙）。
+  万一该文件缺失或云端连不上，会降级为个人模式，页面底部显示「⚠ 云端未连接」，
+  **房间照片不会丢**，联网后刷新即可看到。
+- GPS 自动归位依赖照片里的 EXIF 坐标：微信/QQ 转发过的图片通常已被抹掉 GPS，
+  截图同样没有；这类照片仍按「当前位置」归档，可用 ⇄ 整理位置手动搬。
+- 导出的 ZIP 不压缩（照片本身已是压缩格式），体积≈原图总和；批量导出大相册时会占内存，
+  建议分地点导出。
 - 进站后恢复上次所在房间需要 1~2 秒，这段时间照片墙显示「正在连接房间…」而不会先闪出个人照片。

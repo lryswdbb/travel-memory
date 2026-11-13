@@ -422,6 +422,30 @@ body {
   color: rgba(200,215,245,.62);
 }
 
+/* ============ 上传时的 GPS 识别建议 ============ */
+.up-gps {
+  margin-bottom: 14px; padding: 11px 13px;
+  border-radius: 10px;
+  background: rgba(30,80,60,.28);
+  border: 1px solid rgba(120,220,160,.42);
+}
+.up-gps-head {
+  display: flex; gap: 7px; align-items: baseline;
+  font-size: 12.5px; line-height: 1.55; color: #c8f0da;
+}
+.up-gps-head b { color: #9df0c0; }
+.up-gps-icon { flex: none; }
+.up-gps-opts { margin-top: 9px; display: flex; flex-direction: column; gap: 6px; }
+.up-gps-opt {
+  display: flex !important; align-items: center; gap: 7px;
+  margin: 0 !important; font-size: 12.5px !important;
+  color: rgba(225,240,255,.86) !important; cursor: pointer;
+}
+.up-gps-opt input[type=radio] {
+  display: inline-block !important; width: auto !important;
+  margin: 0 !important; accent-color: #58d19a; cursor: pointer;
+}
+
 /* ============ 整理照片位置（搬家） ============ */
 .mv-panel { width: min(440px, 94vw); }
 .mv-row {

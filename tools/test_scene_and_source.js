@@ -97,7 +97,8 @@ const SCENES = ['scene-cover', 'scene-warp', 'scene-map', 'scene-gallery', 'scen
     const errs = [];
     page.on('pageerror', e => errs.push(e.message));
     await page.setRequestInterception(true);
-    page.on('request', r => /supabase-js|cdn\.jsdelivr/.test(r.url()) ? r.abort() : r.continue());
+    // Supabase 现在自托管在 assets/，兜底才走 CDN —— 两者都拦掉才能模拟「云端连不上」
+    page.on('request', r => /supabase(\.min)?\.js|cdn\.jsdelivr/.test(r.url()) ? r.abort() : r.continue());
 
     await page.goto('http://localhost:8000', { waitUntil: 'networkidle2', timeout: 60000 });
     await sleep(2200);

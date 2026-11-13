@@ -494,8 +494,27 @@
       if (dialogEl) dialogEl.remove();
       dialogEl = document.createElement('div');
       dialogEl.className = 'up-dialog';
-      // 存入位置：照片按「当前地图停在哪一层」归桶，这里明确告知，避免存错地方
+      // 存入位置：照片按「地图当前停在哪一层」归桶，这里明确告知，避免存错地方
       const willSave = o.showPreview ? '' : (currentName || currentKey || '');
+      // GPS 建议：识别到照片里的坐标、算出了更合适的地点时，让用户选
+      const gps = o.gpsSuggestion || null;
+      const gpsHtml = gps ? `
+        <div class="up-gps">
+          <div class="up-gps-head">
+            <span class="up-gps-icon">📍</span>
+            <span>这张照片带 GPS 坐标，识别到拍摄地是 <b>${escapeHtml(gps.name)}</b></span>
+          </div>
+          <div class="up-gps-opts">
+            <label class="up-gps-opt">
+              <input type="radio" name="gpsdest" value="gps" checked>
+              存到 GPS 识别的地点
+            </label>
+            <label class="up-gps-opt">
+              <input type="radio" name="gpsdest" value="current">
+              还是存到当前位置（${escapeHtml(willSave)}）
+            </label>
+          </div>
+        </div>` : '';
       dialogEl.innerHTML = `
         <div class="up-panel">
           <h3>${o.title || '添加照片信息'}</h3>
@@ -504,6 +523,7 @@
             <span class="up-loc-name">${escapeHtml(willSave)}</span>
             <span class="up-loc-hint">照片会归到这里。位置不对请先返回地图，点到正确的地方再上传。</span>
           </div>` : ''}
+          ${gpsHtml}
           ${o.showPreview ? '<img class="up-preview" alt="">' : ''}
           <label>备注 <input type="text" class="up-cap" placeholder="这一刻的心情…" maxlength="60"></label>
           <label>拍摄日期 <input type="date" class="up-date"></label>
@@ -525,7 +545,14 @@
         document.removeEventListener('keydown', onKey, true);
         resolve(val);
       }
-      function ok() { done({ cap: capIn.value.trim(), date: dateIn.value }); }
+      function ok() {
+        const picked = dialogEl.querySelector('input[name=gpsdest]:checked');
+        done({
+          cap: capIn.value.trim(),
+          date: dateIn.value,
+          useGps: !!(picked && picked.value === 'gps'),
+        });
+      }
       dialogEl.querySelector('.up-ok').onclick = ok;
       dialogEl.querySelector('.up-cancel').onclick = () => done(null);
       dialogEl.onclick = e => { if (e.target === dialogEl) done(null); };
@@ -671,6 +698,42 @@
   }
 
   // ---------- 上传 ----------
+  // 读一批文件里的 GPS，汇总出「多数照片拍摄在哪个地点」作为建议
+  async function detectGpsSuggestion(imgs) {
+    if (!window.EXIF || !window.GEO_LOCATE) return null;
+    const found = [];       // [{pair, key, name}]
+    // 最多读前 8 张，避免选了几十张时等待过久
+    for (const pair of imgs.slice(0, 8)) {
+      const gps = await window.EXIF.readGps(pair.img);
+      if (!gps) continue;
+      try {
+        const loc = await window.GEO_LOCATE.locate(gps.lat, gps.lng);
+        if (loc) found.push({ pair, key: loc.key, name: loc.name, lat: gps.lat, lng: gps.lng });
+      } catch (e) { console.warn('GPS 定位失败：', e); }
+    }
+    if (!found.length) return null;
+
+    // 选出现次数最多的地点（并列取第一张的）
+    const counts = {};
+    found.forEach(f => { counts[f.key] = (counts[f.key] || 0) + 1; });
+    let best = found[0].key, bestN = 0;
+    Object.keys(counts).forEach(k => { if (counts[k] > bestN) { bestN = counts[k]; best = k; } });
+    const nameOf = {};
+    found.forEach(f => { nameOf[f.key] = f.name; });
+
+    return {
+      key: best,
+      name: nameOf[best],
+      // key → 显示名，供每张照片各自归位用
+      byPair: found.filter(f => f.key === best).map(f => f.pair),
+      // 全部 GPS 结果（按文件对象索引），用于多地点分批保存
+      all: found,
+      hitCount: found.length,
+      total: imgs.length,
+      sameAsCurrent: best === currentKey,
+    };
+  }
+
   async function handleFiles(files) {
     if (!files || !files.length) return;
     const { pairs, orphanVideos } = splitPairs(Array.from(files));
@@ -685,6 +748,10 @@
     const imgs = pairs;
     const liveCount = imgs.filter(p => p.video).length;
 
+    // 读 GPS：能给照片找到更合适的地点时，让用户选择存在哪
+    const gpsSug = await detectGpsSuggestion(imgs);
+    const showGps = gpsSug && !gpsSug.sameAsCurrent;
+
     // 默认日期取第一张文件的最后修改时间（通常≈拍摄时间）
     const lastMod = new Date(imgs[0].img.lastModified || Date.now());
     const defDate = lastMod.toISOString().slice(0, 10);
@@ -693,12 +760,24 @@
         ? `添加 ${imgs.length} 张照片${liveCount ? `（${liveCount} 张实况）` : ''}`
         : (liveCount ? '添加实况照片' : '添加照片'),
       date: defDate,
-      okText: '保存到照片墙'
+      okText: '保存到照片墙',
+      gpsSuggestion: showGps ? gpsSug : null,
     });
     if (!res) return;
 
     let skippedVideo = 0, skippedHeic = 0;
-    const items = [];
+    // 按目标地点分组：选了「存到 GPS 地点」时，每张照片归到它自己拍摄的地方
+    const groups = new Map();   // key → items[]
+    const pushTo = (key, item) => {
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
+    };
+    const gpsKeyOf = pair => {
+      if (!res.useGps || !gpsSug) return null;
+      const hit = gpsSug.all.find(f => f.pair === pair);
+      return hit ? hit.key : null;
+    };
+
     for (const pair of imgs) {
       const f = pair.img;
       const blob = await shrink(f);
@@ -719,7 +798,7 @@
         date: (imgs.length === 1 ? res.date : (res.date && res.date !== defDate ? res.date : lm)) || ''
       };
       if (video) item.video = video;
-      items.push(item);
+      pushTo(gpsKeyOf(pair) || currentKey, item);
     }
     if (skippedHeic) {
       alert(`有 ${skippedHeic} 张 HEIC 照片浏览器无法解码，已跳过。\n` +
@@ -728,20 +807,46 @@
     if (skippedVideo) {
       alert(`有 ${skippedVideo} 个实况视频超过 ${Math.round(MAX_VIDEO_BYTES / 1048576)}MB，已按普通照片保存。`);
     }
-    if (!items.length) return;
+    if (!groups.size) return;
 
-    if (currentBackend.mode === 'room') {
-      // 云端上传：带进度提示，成功后 store 已在 backend.addPhotos 内重建
-      try {
-        await currentBackend.addPhotos(currentKey, items, (n, total) => {
-          if (window.ROOMS) window.ROOMS.toast(`上传中… ${n}/${total}`);
-        });
-        if (window.ROOMS) window.ROOMS.toast('上传完成');
-      } catch (e) {
-        alert('上传失败：' + (e.message || e));
+    // 保存：可能拆成多个地点（按 GPS 分批）
+    const movedAway = [];
+    let idx = 0;
+    const totalGroups = groups.size;
+    for (const [key, items] of groups) {
+      idx++;
+      const tag = totalGroups > 1 ? `（${idx}/${totalGroups}）` : '';
+      if (currentBackend.mode === 'room') {
+        try {
+          await currentBackend.addPhotos(key, items, (n, total) => {
+            if (window.ROOMS) window.ROOMS.toast(`上传中${tag}… ${n}/${total}`);
+          });
+        } catch (e) {
+          alert('上传失败：' + (e.message || e));
+          continue;
+        }
+      } else {
+        try {
+          await currentBackend.addPhotos(key, items);
+        } catch (e) {
+          alert('保存失败：' + (e.message || e));
+          continue;
+        }
       }
-    } else {
-      await currentBackend.addPhotos(currentKey, items);
+      if (key !== currentKey) {
+        const nm = (gpsSug && gpsSug.all.find(f => f.key === key) || {}).name || '';
+        movedAway.push({ key, n: items.length, name: nm });
+      }
+    }
+    if (window.ROOMS && window.ROOMS.toast) {
+      const totalN = [...groups.values()].reduce((s, a) => s + a.length, 0);
+      if (movedAway.length) {
+        const awayN = movedAway.reduce((s, g) => s + g.n, 0);
+        const where = movedAway.map(g => g.name).filter(Boolean).join('、');
+        window.ROOMS.toast(`已保存 ${totalN} 张，其中 ${awayN} 张按 GPS 归到了 ${where || '别的地点'}`);
+      } else {
+        window.ROOMS.toast(`已保存 ${totalN} 张照片`);
+      }
     }
     await renderPhotos();
   }
@@ -902,6 +1007,11 @@
       $('btn-back').onclick = backToMap;
       const mvBtn = $('btn-move');
       if (mvBtn) mvBtn.onclick = openMoveDialog;
+      const exBtn = $('btn-export');
+      if (exBtn) exBtn.onclick = () => {
+        if (window.EXPORT) window.EXPORT.open();
+        else alert('导出模块未加载，请刷新页面后重试。');
+      };
       $('file-input').onchange = e => { handleFiles(e.target.files); e.target.value = ''; };
       $('lightbox').onclick = e => {
         // 点在导航按钮上不关闭
