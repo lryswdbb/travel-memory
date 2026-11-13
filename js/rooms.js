@@ -89,51 +89,64 @@
         }));
       },
 
+      // 逐张上传。单张失败不再中断整批：把失败的收集起来由上层重试。
+      // 返回 { added, failed: [{ item, message }] }
       async addPhotos(key, items, onProgress) {
         const u = await window.AUTH.getUser();
         if (!u) throw new Error('登录已过期，请重新登录');
+        const added = [];
+        const failed = [];
+
         for (let i = 0; i < items.length; i++) {
-          if (onProgress) onProgress(i + 1, items.length);
           const it = items[i];
-          const id = (crypto.randomUUID ? crypto.randomUUID()
-            : 'r' + Date.now() + Math.random().toString(36).slice(2, 10));
-          const path = `${ctx.roomId}/${id}.jpg`;
-          const { error: upErr } = await sb().storage.from('room-photos')
-            .upload(path, it.blob, { contentType: 'image/jpeg' });
-          if (upErr) throw new Error('照片上传失败：' + upErr.message);
+          try {
+            const id = (crypto.randomUUID ? crypto.randomUUID()
+              : 'r' + Date.now() + Math.random().toString(36).slice(2, 10));
+            const path = `${ctx.roomId}/${id}.jpg`;
+            const { error: upErr } = await sb().storage.from('room-photos')
+              .upload(path, it.blob, { contentType: 'image/jpeg' });
+            if (upErr) throw new Error('照片上传失败：' + upErr.message);
 
-          // 实况照片：视频单独存一份，失败则退化为普通照片（不阻断整批上传）
-          let videoPath = '';
-          if (it.video) {
-            const vpath = `${ctx.roomId}/${id}.mp4`;
-            const { error: vErr } = await sb().storage.from('room-photos')
-              .upload(vpath, it.video, { contentType: it.video.type || 'video/mp4' });
-            if (vErr) console.warn('实况视频上传失败，按普通照片保存：', vErr.message);
-            else videoPath = vpath;
-          }
+            // 实况照片：视频单独存一份，失败则退化为普通照片（不阻断整批上传）
+            let videoPath = '';
+            if (it.video) {
+              const vpath = `${ctx.roomId}/${id}.mp4`;
+              const { error: vErr } = await sb().storage.from('room-photos')
+                .upload(vpath, it.video, { contentType: it.video.type || 'video/mp4' });
+              if (vErr) console.warn('实况视频上传失败，按普通照片保存：', vErr.message);
+              else videoPath = vpath;
+            }
 
-          const row = {
-            id, room_id: ctx.roomId, loc_key: key,
-            uploader_id: u.id, uploader_name: window.AUTH.displayName(u),
-            cap: it.cap || '', shoot_date: it.date || '', ts: it.ts || Date.now(),
-            storage_path: path, video_path: videoPath,
-          };
-          const { error: insErr } = await sb().from('photos').insert(row);
-          if (insErr) {
-            // 回滚已传的文件，避免孤儿对象
-            const rollback = [path];
-            if (videoPath) rollback.push(videoPath);
-            sb().storage.from('room-photos').remove(rollback).catch(() => { });
-            throw new Error('照片登记失败：' + insErr.message);
-          }
-          metaRows.push(row);
-          // 顺手写本地缓存：上传的照片离线也能看
-          try { await window.MEM.cachePut(id, it.blob); } catch (e) { }
-          if (videoPath) {
-            try { await window.MEM.cachePut('vid:' + id, it.video); } catch (e) { }
+            const row = {
+              id, room_id: ctx.roomId, loc_key: key,
+              uploader_id: u.id, uploader_name: window.AUTH.displayName(u),
+              cap: it.cap || '', shoot_date: it.date || '', ts: it.ts || Date.now(),
+              storage_path: path, video_path: videoPath,
+            };
+            const { error: insErr } = await sb().from('photos').insert(row);
+            if (insErr) {
+              // 回滚已传的文件，避免孤儿对象
+              const rollback = [path];
+              if (videoPath) rollback.push(videoPath);
+              sb().storage.from('room-photos').remove(rollback).catch(() => { });
+              throw new Error('照片登记失败：' + insErr.message);
+            }
+            metaRows.push(row);
+            added.push(it);
+            // 顺手写本地缓存：上传的照片离线也能看
+            try { await window.MEM.cachePut(id, it.blob); } catch (e) { }
+            if (videoPath) {
+              try { await window.MEM.cachePut('vid:' + id, it.video); } catch (e) { }
+            }
+            if (onProgress) onProgress(i + 1, items.length, it, 'ok');
+          } catch (e) {
+            console.warn('单张上传失败：', e);
+            failed.push({ item: it, message: e.message || String(e) });
+            if (onProgress) onProgress(i + 1, items.length, it, 'fail');
           }
         }
         window.MEM.store = this.buildStore();
+        return { added: added.length, failed };
       },
 
       async updatePhoto(p) {
@@ -278,6 +291,55 @@
     }
     const { error } = await sb().from('rooms').delete().eq('id', roomId);
     if (error) throw new Error('删除房间失败：' + error.message);
+  }
+
+  // ============================================================
+  // 成员管理（房主：移除成员 / 转让房主）
+  // ============================================================
+  async function listMembers(roomId) {
+    // 优先用 RPC（带 is_owner 标记与名称兜底）；未跑迁移时回退到直接查表
+    const rpc = await sb().rpc('room_members_of', { p_room_id: roomId });
+    if (!rpc.error && rpc.data) {
+      return rpc.data.map(r => ({
+        id: r.user_id, name: r.display_name, joinedAt: r.joined_at, isOwner: r.is_owner,
+      }));
+    }
+    // 回退：直接查（RLS 允许成员读本房间成员）
+    const { data, error } = await sb().from('room_members')
+      .select('user_id, display_name, joined_at')
+      .eq('room_id', roomId);
+    if (error) throw new Error('读取成员失败：' + error.message);
+    return (data || []).map(m => ({
+      id: m.user_id,
+      name: m.display_name || '成员',
+      joinedAt: m.joined_at,
+      isOwner: !!(current && current.ownerId === m.user_id),
+    })).sort((a, b) => (b.isOwner ? 1 : 0) - (a.isOwner ? 1 : 0));
+  }
+
+  // 房主移除成员。只删成员关系，不动对方上传的照片
+  async function kickMember(roomId, userId) {
+    const { error } = await sb().from('room_members').delete()
+      .eq('room_id', roomId).eq('user_id', userId);
+    if (error) throw new Error('移除失败：' + error.message);
+  }
+
+  // 房主转让房间（必须走 RPC：直接改 owner_id 会被 RLS 拒绝）
+  async function transferOwnership(roomId, newOwnerId) {
+    const { error } = await sb().rpc('transfer_room_ownership', {
+      p_room_id: roomId, p_new_owner: newOwnerId,
+    });
+    if (error) {
+      // PGRST202 = 数据库里没有这个函数，说明还没跑 migrate_room_admin.sql
+      if (error.code === 'PGRST202' || /Could not find the function/i.test(error.message || '')) {
+        throw new Error('这个站点还没升级数据库：请在 Supabase SQL Editor 运行 supabase/migrate_room_admin.sql');
+      }
+      if (/只有房主/.test(error.message || '')) throw new Error('只有房主可以转让房间');
+      if (/不在房间/.test(error.message || '')) throw new Error('对方已不在这个房间里了，刷新后再试');
+      throw new Error('转让失败：' + error.message);
+    }
+    if (current) current.ownerId = newOwnerId;
+    updateBar();
   }
 
   // ============================================================
@@ -507,11 +569,20 @@
     });
   }
 
-  // 当前房间管理（退出房间模式 / 离开 / 房主删除）
+  // 当前房间管理（退出房间模式 / 成员 / 离开 / 房主删除）
   function openRoomManage(name, ownerId) {
     const isOwner = _lastUser && ownerId === _lastUser.id;
     dialog(`
       <h3>🏠 ${esc(name)}</h3>
+      <div class="rm-members">
+        <div class="rm-members-head">
+          <span>成员</span>
+          <span class="rm-members-count" id="rm-mcount"></span>
+        </div>
+        <div class="rm-members-list" id="rm-mlist">
+          <p class="rm-empty">加载中…</p>
+        </div>
+      </div>
       <div class="rm-actions col">
         <button class="up-cancel" data-act="exit">返回个人记忆（不退出房间）</button>
         <button class="up-cancel danger" data-act="leave">离开此房间</button>
@@ -532,6 +603,66 @@
         catch (e) { toast(String(e.message || e)); }
       };
       el.querySelector('[data-act=close]').onclick = () => closeDialog(el);
+
+      // ---- 成员列表 ----
+      const listEl = el.querySelector('#rm-mlist');
+      const countEl = el.querySelector('#rm-mcount');
+      async function renderMembers() {
+        if (!current) { listEl.innerHTML = '<p class="rm-empty">不在房间中</p>'; return; }
+        let members = [];
+        try {
+          members = await listMembers(current.id);
+        } catch (e) {
+          listEl.innerHTML = '<p class="rm-empty">成员加载失败：' + esc(e.message || e) + '</p>';
+          return;
+        }
+        if (!el.isConnected) return;   // 对话框已被关掉
+        countEl.textContent = members.length + ' 人';
+        if (!members.length) { listEl.innerHTML = '<p class="rm-empty">暂无成员</p>'; return; }
+
+        const meId = _lastUser && _lastUser.id;
+        const iAmOwner = _lastUser && current.ownerId === _lastUser.id;
+
+        listEl.innerHTML = members.map(m => {
+          const mine = m.id === meId;
+          const tag = m.isOwner ? '<span class="rm-role owner">房主</span>' : '<span class="rm-role">成员</span>';
+          return `
+            <div class="rm-member${mine ? ' is-me' : ''}">
+              <span class="rm-member-name">${esc(m.name)}${mine ? '（我）' : ''}</span>
+              ${tag}
+              ${(iAmOwner && !mine && !m.isOwner)
+                ? `<span class="rm-member-ops">
+                     <button class="rm-op" data-op="transfer" data-uid="${m.id}" data-name="${esc(m.name)}" title="把房主让给 TA">转让</button>
+                     <button class="rm-op danger" data-op="kick" data-uid="${m.id}" data-name="${esc(m.name)}" title="移出房间">移除</button>
+                   </span>` : ''}
+            </div>`;
+        }).join('');
+
+        listEl.querySelectorAll('.rm-op').forEach(b => {
+          b.onclick = async () => {
+            const uid = b.dataset.uid, uname = b.dataset.name;
+            if (b.dataset.op === 'kick') {
+              if (!confirm(`把「${uname}」移出房间？\nTA 上传的照片会留在房间里，TA 之后需要密码才能重新加入。`)) return;
+              b.disabled = true;
+              try { await kickMember(current.id, uid); toast('已移除「' + uname + '」'); await renderMembers(); }
+              catch (e) { b.disabled = false; toast(String(e.message || e)); }
+            } else if (b.dataset.op === 'transfer') {
+              if (!confirm(`把房主转让给「${uname}」？\n转让后你将变成普通成员，不能再管理成员或删除房间。`)) return;
+              b.disabled = true;
+              try {
+                await transferOwnership(current.id, uid);
+                toast('已把房主转让给「' + uname + '」');
+                closeDialog(el);
+                openRoomManage(name, uid);
+              } catch (e) {
+                b.disabled = false;
+                toast(String(e.message || e));
+              }
+            }
+          };
+        });
+      }
+      renderMembers();
     });
   }
 
@@ -718,5 +849,12 @@
     onAuthChanged,
     updateBar,
     toast,
+    // 测试钩子：直接打开成员管理面板，绕过需要真实登录/进房的前置流程
+    __test_openManage(name, ownerId) {
+      _lastUser = _lastUser || { id: ownerId || (current && current.ownerId) || 'u-me' };
+      if (!current) current = { id: 'test-room', name, ownerId };
+      else if (ownerId) current.ownerId = ownerId;
+      openRoomManage(name, ownerId);
+    },
   };
 })();

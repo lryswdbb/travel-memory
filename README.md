@@ -56,6 +56,9 @@ node server.js
     输入用户名 + 密码 → 「创建账号并开始使用」；登录后地图右上角房间栏解锁：
     创建房间（房主设密码）或搜索加入（输房间密码）；进房后地图与照片墙
     自动切换为房间共享数据，成员上传照片**实时同步**给彼此
+    <br>**成员管理** —— 房间栏 → 点当前房间，可以看到全部成员。房主可以
+    **移除成员**（对方上传的照片会留在房间里）或**转让房主**（转让后自己变成普通成员）；
+    普通成员只能看到名单，管理按钮不显示
 11. 已有照片的地区在地图上会以 **金色** 高亮，tooltip 显示照片数量
 12. 手机上同样可用：地图点按、照片墙单列时间线、地球双指缩放、走马灯两行滚动
 
@@ -112,16 +115,18 @@ travel-memory/
 │   ├── map.js            # 多级地图（echarts：世界/中国省市/美国州县/全球省州）
 │   ├── gallery.js        # 照片墙 + 日期时间线 + 大图翻页 + IndexedDB 存储 + 上传压缩 + 实况照片配对/播放 + 后端抽象
 │   ├── auth.js           # 用户名 + 密码登录（Supabase，用户名派生账号，无邮件依赖）
-│   ├── rooms.js          # 云端房间：创建/加入/退出、房间栏、照片云同步（Realtime + 轮询兜底）
+│   ├── rooms.js          # 云端房间：创建/加入/退出、房间栏、成员管理、照片云同步（Realtime + 轮询兜底）
 │   ├── carousel.js       # 照片走马灯：三行错速滚动、拖拽甩动、日期筛选
 │   ├── stats.js          # 足迹统计总览页
 │   ├── exif.js           # 读照片 EXIF 里的 GPS 坐标（纯前端，无依赖）
 │   ├── geolocate.js      # 坐标 → 地点 key（点在多边形内判定，与地图层级一致）
 │   ├── export.js         # 导出备份：打包 ZIP / 逐文件下载 + backup.json
+│   ├── upload-progress.js # 上传进度条 + 失败清单与重试
 │   └── landmarks.js      # 各地标图片清单（Wikimedia Commons）
 ├── supabase/
 │   ├── schema.sql        # 云端数据库结构（新项目一次性运行）
-│   └── migrate_live_photo.sql  # 已有项目升级到实况照片支持的迁移脚本
+│   ├── migrate_live_photo.sql  # 已有项目升级到实况照片支持的迁移脚本
+│   └── migrate_room_admin.sql  # 已有项目升级到成员管理的迁移脚本（转让房主 / 成员列表）
 ├── assets/               # three.js / echarts / topojson 库 + 地球贴图
 ├── data/js/              # 全部地图边界数据（已转成 .js，双击 html 也能用）
 │   └── prov_<iso>.js     # 全球 239 国省/州边界（map.js 按需懒加载；prov_index.js 为名称索引）
@@ -132,6 +137,8 @@ travel-memory/
     ├── test_export.js     # 导出备份测试：ZIP 结构/CRC/backup.json（node tools/test_export.js）
     ├── test_gps.js        # GPS 读取与自动归位测试（node tools/test_gps.js）
     ├── test_scene_and_source.js # 场景切换 / 数据来源 / 云端掉线提示（node tools/test_scene_and_source.js）
+    ├── test_upload_progress.js # 上传进度 / 单张失败不中断 / 失败清单（node tools/test_upload_progress.js）
+    ├── test_room_members.js # 房间成员管理（打桩 Supabase，不需要云端）（node tools/test_room_members.js）
     └── cleanup_diag_accounts.js # 清理测试用临时账号与房间（node tools/cleanup_diag_accounts.js <用户名...>）
 ```
 

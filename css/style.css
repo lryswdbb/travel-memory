@@ -458,6 +458,67 @@ body {
 .mv-label { font-size: 11px; letter-spacing: .14em; color: rgba(200,215,245,.6); }
 .mv-cur { font-size: 14.5px; font-weight: 600; color: #dfe8ff; word-break: break-word; }
 .mv-count { margin-left: auto; font-size: 12.5px; color: #ffd98a; white-space: nowrap; }
+
+/* ============ 上传进度（右下角常驻） ============ */
+.upl-panel {
+  position: fixed; right: 22px; bottom: 22px; z-index: 70;
+  width: min(320px, calc(100vw - 44px));
+  padding: 13px 15px 14px;
+  border-radius: 13px;
+  background: rgba(12,18,44,.94);
+  border: 1px solid rgba(150,180,255,.38);
+  box-shadow: 0 14px 40px rgba(0,0,0,.55);
+  backdrop-filter: blur(10px);
+  opacity: 0; transform: translateY(12px); pointer-events: none;
+  transition: opacity .25s, transform .25s;
+}
+.upl-panel.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.upl-head {
+  display: flex; align-items: baseline; gap: 8px;
+  font-size: 12.5px; color: #dce6ff; margin-bottom: 9px;
+}
+.upl-title { font-weight: 600; letter-spacing: .04em; }
+.upl-count { margin-left: auto; color: #ffd98a; font-variant-numeric: tabular-nums; }
+.upl-bar {
+  height: 5px; border-radius: 999px; overflow: hidden;
+  background: rgba(120,150,230,.22);
+}
+.upl-fill {
+  height: 100%; width: 0%; border-radius: 999px;
+  background: linear-gradient(90deg, #4a76d8, #7fb0ff);
+  transition: width .28s ease, background .28s;
+}
+.upl-fill.is-fail { background: linear-gradient(90deg, #d1654a, #ff9d7f); }
+.upl-sub {
+  margin-top: 8px; font-size: 11.5px; line-height: 1.5;
+  color: rgba(200,215,245,.68);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  min-height: 17px;
+}
+.upl-panel.is-done .upl-fill { background: linear-gradient(90deg, #3fa871, #7fe0ae); }
+
+/* 失败清单对话框 */
+.upl-fail-panel { width: min(460px, 94vw); }
+.upl-fail-hint {
+  font-size: 12.5px; line-height: 1.65; margin-bottom: 12px;
+  color: rgba(200,215,245,.72);
+}
+.upl-fail-list {
+  list-style: none; max-height: 42vh; overflow: auto;
+  margin-bottom: 12px; padding: 0;
+}
+.upl-fail-row {
+  display: flex; gap: 10px; align-items: baseline;
+  padding: 7px 0; border-bottom: 1px solid rgba(150,180,255,.13);
+  font-size: 12.5px;
+}
+.upl-fail-row:last-child { border-bottom: none; }
+.upl-fail-cap {
+  flex: none; max-width: 40%;
+  color: #ffd6c0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.upl-fail-msg { color: rgba(255,157,157,.9); line-height: 1.5; word-break: break-word; }
+.upl-fail-more { font-size: 12px; color: rgba(200,215,245,.6); margin-bottom: 10px; }
 .mv-hint {
   font-size: 12.5px; line-height: 1.65; margin-bottom: 15px;
   color: rgba(200,215,245,.7);
@@ -916,6 +977,56 @@ body.no-trans * { transition: none !important; animation: none !important; }
 .up-cancel.danger { border-color: rgba(255,120,100,.45); color: #ff9a8a; }
 .up-cancel.danger:hover { background: rgba(200,60,40,.2); }
 .rm-err { min-height: 18px; font-size: 13px; color: #ff8a80; margin-bottom: 8px; }
+
+/* ============ 房间成员列表 ============ */
+.rm-members { margin-bottom: 16px; }
+.rm-members-head {
+  display: flex; align-items: baseline;
+  font-size: 11.5px; letter-spacing: .14em;
+  color: rgba(200,215,245,.55);
+  padding-bottom: 7px; margin-bottom: 4px;
+  border-bottom: 1px solid rgba(150,180,255,.16);
+}
+.rm-members-count { margin-left: auto; letter-spacing: 0; color: rgba(255,217,138,.8); }
+.rm-members-list { max-height: 230px; overflow-y: auto; }
+.rm-member {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 2px;
+  border-bottom: 1px solid rgba(150,180,255,.09);
+  font-size: 13.5px;
+}
+.rm-member:last-child { border-bottom: none; }
+.rm-member.is-me .rm-member-name { color: #ffd98a; }
+.rm-member-name {
+  flex: 1; min-width: 0;
+  color: #e2eaff;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rm-role {
+  flex: none; padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; letter-spacing: .06em;
+  background: rgba(120,150,230,.18);
+  color: rgba(210,225,255,.75);
+  border: 1px solid rgba(150,180,255,.25);
+}
+.rm-role.owner {
+  background: rgba(120,85,20,.45);
+  border-color: rgba(255,200,120,.5);
+  color: #ffd98a;
+}
+.rm-member-ops { display: flex; gap: 6px; flex: none; }
+.rm-op {
+  padding: 4px 10px; border-radius: 999px; cursor: pointer;
+  font-size: 11.5px;
+  background: rgba(30,45,100,.6);
+  border: 1px solid rgba(150,180,255,.32);
+  color: rgba(215,228,255,.9);
+  transition: background .2s, border-color .2s;
+}
+.rm-op:hover { background: rgba(60,85,170,.7); }
+.rm-op.danger { border-color: rgba(255,120,100,.4); color: #ff9a8a; }
+.rm-op.danger:hover { background: rgba(200,60,40,.28); }
+.rm-op:disabled { opacity: .5; cursor: default; }
 .up-ok:disabled { opacity: .45; cursor: default; }
 .rm-toast {
   position: fixed; left: 50%; bottom: 42px; z-index: 80;

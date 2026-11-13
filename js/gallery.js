@@ -129,11 +129,29 @@
   const localBackend = {
     mode: 'local',
     async getPhotos(key) { return idbGet(key); },
-    async addPhotos(key, items) {
+    // 与云端后端保持同一返回结构：{ added, failed: [{item, message}] }
+    async addPhotos(key, items, onProgress) {
       const list = await idbGet(key);
-      list.push(...items);
-      await idbPut(key, list);
+      const failed = [];
+      const okItems = [];
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        try {
+          list.push(it);
+          // 每次落盘一次，保证中途失败时已处理的照片不会丢
+          await idbPut(key, list);
+          okItems.push(it);
+          if (onProgress) onProgress(i + 1, items.length, it, 'ok');
+        } catch (e) {
+          // 回滚这一张（可能已 push 进 list）
+          const at = list.indexOf(it);
+          if (at >= 0) list.splice(at, 1);
+          failed.push({ item: it, message: e.message || String(e) });
+          if (onProgress) onProgress(i + 1, items.length, it, 'fail');
+        }
+      }
       updateIndexFrom(key, list.length);
+      return { added: okItems.length, failed };
     },
     async updatePhoto(p) {
       const list = await idbGet(currentKey);
@@ -811,35 +829,89 @@
 
     // 保存：可能拆成多个地点（按 GPS 分批）
     const movedAway = [];
-    let idx = 0;
-    const totalGroups = groups.size;
-    for (const [key, items] of groups) {
-      idx++;
-      const tag = totalGroups > 1 ? `（${idx}/${totalGroups}）` : '';
-      if (currentBackend.mode === 'room') {
+    const totalAll = [...groups.values()].reduce((s, a) => s + a.length, 0);
+    let doneAll = 0;
+    // 失败收集：{ item, message, key }，重试时要知道该存回哪个地点
+    const allFailed = [];
+
+    const prog = (window.UPLOAD)
+      ? window.UPLOAD.start({ total: totalAll, mode: currentBackend.mode })
+      : null;
+
+    const saveGroup = async (key, items) => {
+      const res = await currentBackend.addPhotos(key, items, (n, total, item, status) => {
+        doneAll++;
+        if (prog) prog.update(doneAll, totalAll, null, item, status);
+      });
+      if (res && res.failed && res.failed.length) {
+        res.failed.forEach(f => allFailed.push({ item: f.item, message: f.message, key }));
+      }
+    };
+
+    try {
+      for (const [key, items] of groups) {
         try {
-          await currentBackend.addPhotos(key, items, (n, total) => {
-            if (window.ROOMS) window.ROOMS.toast(`上传中${tag}… ${n}/${total}`);
-          });
+          await saveGroup(key, items);
         } catch (e) {
-          alert('上传失败：' + (e.message || e));
-          continue;
+          // 整批都没进去（例如登录已过期）：这些也算失败，可稍后重试
+          console.warn('这一批保存失败：', e);
+          items.forEach(it => allFailed.push({ item: it, message: e.message || String(e), key }));
+          if (prog) items.forEach(it => prog.update(++doneAll, totalAll, null, it, 'fail'));
         }
-      } else {
-        try {
-          await currentBackend.addPhotos(key, items);
-        } catch (e) {
-          alert('保存失败：' + (e.message || e));
-          continue;
+        if (key !== currentKey) {
+          const nm = (gpsSug && gpsSug.all.find(f => f.key === key) || {}).name || '';
+          const okN = items.length - allFailed.filter(f => f.key === key).length;
+          if (okN > 0) movedAway.push({ key, n: okN, name: nm });
         }
       }
-      if (key !== currentKey) {
-        const nm = (gpsSug && gpsSug.all.find(f => f.key === key) || {}).name || '';
-        movedAway.push({ key, n: items.length, name: nm });
+    } finally {
+      if (prog) {
+        const okN = totalAll - allFailed.length;
+        prog.finish(allFailed.length
+          ? `${okN} 张已保存，${allFailed.length} 张失败`
+          : `全部 ${okN} 张已保存`);
+        prog.close(allFailed.length ? 1600 : 1100);
       }
     }
-    if (window.ROOMS && window.ROOMS.toast) {
-      const totalN = [...groups.values()].reduce((s, a) => s + a.length, 0);
+
+    // 有失败 → 弹清单，可只重试失败的那些
+    if (allFailed.length && window.UPLOAD) {
+      setTimeout(() => {
+        window.UPLOAD.showFailures(allFailed.map(f => ({ item: f.item, message: f.message })), async () => {
+          // 重试：按地点重新分组，只重发失败项
+          const retryGroups = new Map();
+          allFailed.forEach(f => {
+            const k = f.key || currentKey;
+            if (!retryGroups.has(k)) retryGroups.set(k, []);
+            retryGroups.get(k).push(f.item);
+          });
+          const stillFailed = [];
+          const total = [...retryGroups.values()].reduce((s, a) => s + a.length, 0);
+          let n = 0;
+          const p2 = window.UPLOAD.start({ total, mode: currentBackend.mode, title: '正在重试' });
+          for (const [key, items] of retryGroups) {
+            try {
+              const res = await currentBackend.addPhotos(key, items, (k, t, item, status) => {
+                p2.update(++n, total, null, item, status);
+              });
+              if (res && res.failed) res.failed.forEach(f => stillFailed.push({ item: f.item, message: f.message, key }));
+            } catch (e) {
+              items.forEach(it => { stillFailed.push({ item: it, message: e.message || String(e) }); p2.update(++n, total, null, it, 'fail'); });
+            }
+          }
+          p2.finish(stillFailed.length ? `仍有 ${stillFailed.length} 张失败` : '全部重试成功');
+          p2.close(1300);
+          if (stillFailed.length) {
+            setTimeout(() => window.UPLOAD.showFailures(stillFailed.map(f => ({ item: f.item, message: f.message })), null), 1400);
+          }
+          await renderPhotos();
+          if (window.MAP && window.MAP.refreshHighlight) { try { window.MAP.refreshHighlight(); } catch (e) { } }
+        });
+      }, 300);
+    }
+
+    if (window.ROOMS && window.ROOMS.toast && !allFailed.length) {
+      const totalN = totalAll;
       if (movedAway.length) {
         const awayN = movedAway.reduce((s, g) => s + g.n, 0);
         const where = movedAway.map(g => g.name).filter(Boolean).join('、');
