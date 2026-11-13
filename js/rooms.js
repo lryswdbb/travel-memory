@@ -448,10 +448,19 @@
         if (hit) {
           try {
             await enter(hit.id, hit.name, hit.ownerId);
+            toast('已回到房间「' + hit.name + '」');
           } catch (e) {
+            // 进房失败不能静默：否则界面落回本地个人照片，
+            // 看起来就像「房间里的照片被换掉了」。
             console.warn('恢复房间失败：', e);
             try { localStorage.removeItem(CURRENT_ROOM_KEY); } catch (_) { }
+            toast('未能进入房间「' + saved.name + '」：' + (e.message || e) + '，当前显示本机个人照片');
           }
+        } else {
+          // 上次的房间找不到了（被移出/房间已删/网络读取失败）
+          console.warn('上次所在的房间不在我的房间列表中：', saved);
+          try { localStorage.removeItem(CURRENT_ROOM_KEY); } catch (_) { }
+          toast('没找到上次的房间「' + (saved.name || '') + '」，当前显示本机个人照片');
         }
       }
     }
@@ -682,11 +691,26 @@
   window.ROOMS = {
     init() {
       buildBar();
+      // 「正在恢复房间」闸门：上次在房间里的话，会话读取 + 拉取房间数据要 1~2 秒。
+      // 这段时间里如果先按本地数据渲染并刷新地图，用户看到的会是本机那几张照片，
+      // 随后又跳成房间照片——看起来就像「照片被换掉了」。用闸门把这段空窗挡住。
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(CURRENT_ROOM_KEY) || 'null'); } catch (e) { }
+      if (saved && saved.id) window.__roomRestoring = saved.name || '';
+
       window.AUTH.onChange(u => { onAuthChanged(u); });
       // 启动时读取会话（异步），恢复上次房间
       (async () => {
-        const u = await window.AUTH.getUser();
-        onAuthChanged(u);
+        try {
+          const u = await window.AUTH.getUser();
+          await onAuthChanged(u);
+        } finally {
+          // 无论成功失败都要放开闸门，避免卡死
+          window.__roomRestoring = '';
+          if (window.MAP && window.MAP.refreshHighlight) {
+            try { window.MAP.refreshHighlight(); } catch (e) { }
+          }
+        }
       })();
     },
     enter, exit,

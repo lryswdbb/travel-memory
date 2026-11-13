@@ -363,6 +363,10 @@
       if (chart && el && el.clientWidth > 0) chart.resize();
     },
     refreshHighlight() {
+      // 正在恢复上次所在的房间：此刻 store 还是本机的个人数据，
+      // 先别按它重画高亮，否则会闪一下个人足迹再跳到房间足迹。
+      // 房间恢复完成后 rooms.js 会再调一次本方法。
+      if (window.__roomRestoring) return;
       // 从照片墙返回时刷新“已有记忆”高亮
       if (state.level === 'world') renderWorld();
       else if (state.level === 'cn_province') renderChinaProvinces();

@@ -224,6 +224,25 @@ body {
   color: rgba(210,222,250,.65);
   text-shadow: 0 1px 12px rgba(0,0,0,.9);
 }
+/* 数据来源标识：这面墙的照片是从房间来的，还是本机个人照片 */
+.gallery-source {
+  display: inline-block; margin-top: 7px;
+  padding: 3px 11px; border-radius: 999px;
+  font-size: 11.5px; letter-spacing: .08em; white-space: nowrap;
+  background: rgba(20,30,70,.6);
+  border: 1px solid rgba(120,150,230,.45);
+  color: rgba(200,215,245,.8);
+}
+.gallery-source.is-room {
+  background: rgba(30,70,50,.55);
+  border-color: rgba(120,220,160,.5);
+  color: #b6f0cd;
+}
+.gallery-source.is-local {
+  background: rgba(70,55,20,.5);
+  border-color: rgba(255,200,120,.45);
+  color: #ffe0b0;
+}
 .btn-upload {
   padding: 9px 20px;
   font-size: 14px; letter-spacing: .1em;

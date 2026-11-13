@@ -71,6 +71,31 @@
     } catch (e) { }
   }
 
+  // ---------- 云端不可用提示（不静默降级） ----------
+  // CDN 被墙 / 断网 / 配置缺失时，AUTH.available 为 false，房间功能整体消失。
+  // 此时页面展示的是「本机个人照片」，不是房间照片。以前这种情况毫无提示，
+  // 用户会以为房间里的照片丢了 / 被换成了别的照片。
+  function showCloudDownNotice() {
+    try {
+      if (document.getElementById('cloud-down')) return;
+      const el = document.createElement('div');
+      el.id = 'cloud-down';
+      el.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);' +
+        'z-index:99997;max-width:min(560px,92vw);padding:11px 16px;border-radius:12px;' +
+        'background:rgba(92,48,12,.94);border:1px solid rgba(255,183,77,.55);' +
+        'color:#ffe4bd;font-size:13px;line-height:1.65;box-shadow:0 10px 30px rgba(0,0,0,.5);';
+      el.innerHTML =
+        '<b>⚠ 云端未连接</b><br>' +
+        '现在展示的是<u>本机保存的个人照片</u>，不是共享房间里的照片。' +
+        '房间照片仍安全地存在云端，没有丢失。<br>' +
+        '<span style="color:#ffb74d">检查网络后刷新页面</span>';
+      el.title = '点击重试';
+      el.style.cursor = 'pointer';
+      el.onclick = () => location.reload();
+      document.body.appendChild(el);
+    } catch (e) { console.warn('云端提示渲染失败：', e); }
+  }
+
   // ---------- 流程 ----------
   function boot() {
     coverStars();
@@ -82,8 +107,11 @@
     if (window.AUTH.available) {
       try { window.ROOMS.init(); } catch (e) { console.warn('ROOMS 初始化失败：', e); }
     } else {
+      // 云端不可用不能静默降级：否则用户会以为「房间里的照片没了」，
+      // 实际只是这次没连上云端，当前看到的是本机的个人照片。
       const bar = document.getElementById('room-bar');
       if (bar) bar.style.display = 'none';
+      showCloudDownNotice();
     }
     try { window.CAROUSEL.init(); } catch (e) { console.warn('CAROUSEL 初始化失败：', e); }
 

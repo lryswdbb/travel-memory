@@ -91,19 +91,31 @@
   }
 
   // ---------- 场景切换 ----------
+  // 每个非目标场景会挂一个 1200ms「收起」定时器（等淡出动画结束再 display:none）。
+  // 这个定时器必须可取消：否则 1.2 秒内切回该场景时，旧定时器会把刚加上的
+  // active 摘掉 → display:none → 整屏黑，只剩 body 上的左下角账号按钮。
   const SCENES = ['scene-cover', 'scene-warp', 'scene-map', 'scene-gallery', 'scene-stats', 'scene-auth', 'scene-carousel'];
+  const sceneHideTimers = {};
   window.showScene = function (id) {
     SCENES.forEach(s => {
       const el = document.getElementById(s);
       if (!el) return;
+      // 任何一次切换都先取消该场景排队的收起动作
+      if (sceneHideTimers[s]) { clearTimeout(sceneHideTimers[s]); delete sceneHideTimers[s]; }
       if (s === id) {
         el.classList.add('active');
         requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('visible')));
       } else {
         el.classList.remove('visible');
-        setTimeout(() => el.classList.remove('active'), 1200);
+        sceneHideTimers[s] = setTimeout(() => {
+          delete sceneHideTimers[s];
+          // 兜底：若期间它已成为当前场景，就不要收起
+          if (document.getElementById(s) !== null && window.__currentScene === s) return;
+          el.classList.remove('active');
+        }, 1200);
       }
     });
+    window.__currentScene = id;
   };
 
   // ---------- 照片墙 ----------
@@ -202,6 +214,25 @@
     if (!d) return '';
     const [y, m] = d.split('-');
     return `${y}年${+m}月`;
+  }
+
+  // 照片墙顶部的「数据来源」标识。
+  // 房间照片和本机个人照片长得一模一样，之前界面上完全看不出来，
+  // 于是「进房失败静默退回本地」会被误认为「房间里的照片被换掉了」。
+  function updateSourceBadge() {
+    const el = $('gallery-source');
+    if (!el) return;
+    if (currentBackend.mode === 'room') {
+      const name = (window.ROOMS && window.ROOMS.current && window.ROOMS.current() || {}).name;
+      el.textContent = '🏠 共享房间' + (name ? '「' + name + '」' : '') + '的照片';
+      el.className = 'gallery-source is-room';
+      el.title = '这面墙显示的是房间成员共同上传的照片（存在云端）';
+    } else {
+      el.textContent = '📱 本机个人照片（仅这台设备可见）';
+      el.className = 'gallery-source is-local';
+      el.title = '这面墙显示的是存在本浏览器里的照片，不与其他设备/成员共享';
+    }
+    el.hidden = false;
   }
 
   async function openGallery(key, displayName) {
@@ -404,6 +435,17 @@
   }
 
   async function renderPhotos() {
+    updateSourceBadge();
+    // 正在恢复上次所在的房间：这 1~2 秒内先别按本机数据渲染，
+    // 否则会闪一下个人照片再跳成房间照片，看起来像「照片被换掉了」。
+    if (window.__roomRestoring && currentBackend.mode === 'local') {
+      releaseLives();
+      grid().innerHTML = '';
+      empty().style.display = 'flex';
+      empty().innerHTML = '正在连接房间「' + escapeHtml(window.__roomRestoring) + '」…<br>' +
+        '<span>正在载入房间成员共享的照片</span>';
+      return;
+    }
     try {
       photoCache = sortPhotos(await currentBackend.getPhotos(currentKey));
     } catch (e) {

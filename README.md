@@ -117,7 +117,8 @@ travel-memory/
 └── tools/                # 本地开发/测试脚本（headless 冒烟测试与截图，不参与产品运行）
     ├── build_provinces.js # Natural Earth → prov_*.js 一次性构建脚本
     ├── test_live_photo.js # 实况照片冒烟测试（node tools/test_live_photo.js）
-    └── test_move_photos.js # 照片整理（搬家）冒烟测试（node tools/test_move_photos.js）
+    ├── test_move_photos.js # 照片整理（搬家）冒烟测试（node tools/test_move_photos.js）
+    └── test_scene_and_source.js # 场景切换 / 数据来源 / 云端掉线提示（node tools/test_scene_and_source.js）
 ```
 
 ## 数据来源
@@ -156,3 +157,9 @@ travel-memory/
 - 外国省/州的照片墙标题、store key 用英文名（如 `prov:JP:Kyoto`），tooltip 和照片墙
   标题会显示 Natural Earth 自带的中文名（京都府）；若未来数据源改名，旧照片 key 不变。
 - 地标图在 `js/landmarks.js` 中按地区维护，可自行增删（填 Wikimedia 文件名即可）。
+- **个人照片与房间照片是两套独立数据**：房间里的照片存在云端（Supabase），个人模式的照片
+  只存在当前浏览器。照片墙标题下方有来源标识（🏠 共享房间 / 📱 本机个人照片），
+  看清再操作——在个人模式下删照片不会影响房间里的照片，反之亦然。
+- 云端依赖 `cdn.jsdelivr.net` 加载 Supabase 客户端。网络不通时会降级为个人模式，
+  页面底部会显示「⚠ 云端未连接」的提示，**房间照片不会丢**，联网后刷新即可看到。
+- 进站后恢复上次所在房间需要 1~2 秒，这段时间照片墙显示「正在连接房间…」而不会先闪出个人照片。
