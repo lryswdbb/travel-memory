@@ -122,7 +122,10 @@ travel-memory/
 │   ├── geolocate.js      # 坐标 → 地点 key（点在多边形内判定，与地图层级一致）
 │   ├── export.js         # 导出备份：打包 ZIP / 逐文件下载 + backup.json
 │   ├── upload-progress.js # 上传进度条 + 失败清单与重试
+│   ├── geo-loader.js     # 地图边界数据非阻塞并行加载（首屏不被 475KB 拖住）
+│   ├── lib-loader.js     # three.js / echarts 按需加载（点「进入」时才拉）
 │   └── landmarks.js      # 各地标图片清单（Wikimedia Commons）
+├── sw.js                 # Service Worker：静态资源离线缓存，第二次打开秒开
 ├── supabase/
 │   ├── schema.sql        # 云端数据库结构（新项目一次性运行）
 │   ├── migrate_live_photo.sql  # 已有项目升级到实况照片支持的迁移脚本
@@ -171,6 +174,11 @@ travel-memory/
 
 ## 已知限制
 
+- **国内访问首次加载较慢**：站点在 GitHub Pages，实测国内到 github.io 只有约 20KB/s，
+  首次要下 1.2MB（gzip 后），约 40~60 秒。已做的优化：地图边界数据改为并行非阻塞加载、
+  three.js/echarts 改为点「进入」时才拉、美国州县数据点进美国才拉，首屏流量从 3.5MB 降到 1.9MB；
+  并注册了 Service Worker，**第二次打开基本秒开**。想彻底解决需要换国内可访问的托管
+  （如阿里云 OSS / 腾讯云 COS + CDN，或 Vercel 绑自定义域名）。
 - 地图下钻层级：中国到「市/区」级，美国到「县」级，其余约 210 个国家到「省/州」级
   （Natural Earth 10m admin-1 数据，点击时按需懒加载单国文件）。少数迷你国家/地区
   （梵蒂冈、摩纳哥等）无省级数据，点击直接进国家照片墙。

@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>我们的旅行记忆</title>
-<link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=18">
-<link rel="stylesheet" href="css/style.css?v=18">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=19">
+<link rel="stylesheet" href="css/style.css?v=19">
 </head>
 <body>
 
@@ -198,36 +198,36 @@
   <div class="lightbox-close">✕</div>
 </div>
 
-<script src="assets/three.min.js"></script>
-<script src="assets/echarts.min.js"></script>
-<script src="assets/topojson.min.js"></script>
+<!-- three.js / echarts / topojson 不再同步加载：合计约 1.6MB 未压缩，
+     封面页一个都用不到。lib-loader.js 在点「点击进入」时再并行拉取，
+     首屏因此能立刻显示。见 js/lib-loader.js。 -->
+<script src="js/lib-loader.js?v=19"></script>
 <!-- Supabase 客户端：自托管（大陆网络访问 jsdelivr 常被墙，走 CDN 会导致房间功能整体消失）。
      下面的 CDN 只在本地文件缺失/损坏时兜底，正常情况下不会发请求。 -->
-<script src="assets/supabase.min.js?v=18"></script>
+<script src="assets/supabase.min.js?v=19"></script>
 <script>
   if (!window.supabase) {
     document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" crossorigin="anonymous"><\/script>');
   }
 </script>
-<script src="js/config.js?v=18"></script>
-<script src="data/js/world.js"></script>
-<script src="data/js/china_provinces.js"></script>
-<script src="data/js/us_states.js"></script>
-<script src="data/js/us_counties.js"></script>
-<!-- 全球省/州索引（各国边界文件 prov_<iso>.js 由 map.js 按需懒加载） -->
-<script src="data/js/prov_index.js?v=18"></script>
-<script src="js/landmarks.js?v=18"></script>
-<script src="js/exif.js?v=18"></script>
-<script src="js/geolocate.js?v=18"></script>
-<script src="js/warp.js?v=18"></script>
-<script src="js/map.js?v=18"></script>
-<script src="js/gallery.js?v=18"></script>
-<script src="js/auth.js?v=18"></script>
-<script src="js/rooms.js?v=18"></script>
-<script src="js/carousel.js?v=18"></script>
-<script src="js/stats.js?v=18"></script>
-<script src="js/export.js?v=18"></script>
-<script src="js/upload-progress.js?v=18"></script>
-<script src="js/main.js?v=18"></script>
+<script src="js/config.js?v=19"></script>
+<!-- 地图边界数据不再同步加载：world.js(279KB gz) + china_provinces.js(196KB gz)
+     会阻塞首屏，而封面和穿梭动画根本用不到。geo-loader.js 在页面一加载就并行
+     拉取，map.js 的 init() 会等 window.GEO_READY 再画图。
+     美国州县边界（us_counties.js）改为点进美国时才拉，见 map.js 的 ensureUsData()。 -->
+<script src="js/geo-loader.js?v=19"></script>
+<script src="js/landmarks.js?v=19"></script>
+<script src="js/exif.js?v=19"></script>
+<script src="js/geolocate.js?v=19"></script>
+<script src="js/warp.js?v=19"></script>
+<script src="js/map.js?v=19"></script>
+<script src="js/gallery.js?v=19"></script>
+<script src="js/auth.js?v=19"></script>
+<script src="js/rooms.js?v=19"></script>
+<script src="js/carousel.js?v=19"></script>
+<script src="js/stats.js?v=19"></script>
+<script src="js/export.js?v=19"></script>
+<script src="js/upload-progress.js?v=19"></script>
+<script src="js/main.js?v=19"></script>
 </body>
 </html>

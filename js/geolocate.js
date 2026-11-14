@@ -102,7 +102,32 @@
     return null;
   }
 
-  // US 县数据在 topojson 里，用 topojson.feature 转成 GeoJSON 再匹配
+  // US 县数据在 topojson 里，用 topojson.feature 转成 GeoJSON 再匹配。
+  // 注意：us_counties.js 约 256KB gz，已改成按需加载（map.js 点进美国时才拉）。
+  // GPS 定位遇到美国坐标时也要先确保它到位，否则会误判成「无结果」。
+  // topojson 本身也是按需加载的（lib-loader.js），这里一并确保。
+  let usDataPromise = null;
+  function loadScriptOnce(src) {
+    return new Promise(resolve => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = resolve;   // 失败也 resolve，调用方靠数据是否存在判断
+      document.head.appendChild(s);
+    });
+  }
+  function ensureUsData() {
+    if (G.us_counties && window.topojson) return Promise.resolve();
+    if (usDataPromise) return usDataPromise;
+    const jobs = [];
+    if (!window.topojson) jobs.push(loadScriptOnce('assets/topojson.min.js'));
+    if (!G.us_counties) jobs.push(loadScriptOnce('data/js/us_counties.js'));
+    usDataPromise = Promise.all(jobs).then(() => {
+      if (!G.us_counties || !window.topojson) usDataPromise = null;   // 允许重试
+    });
+    return usDataPromise;
+  }
+
   let usCountiesGeo = null;
   function usCounties() {
     if (usCountiesGeo) return usCountiesGeo;
@@ -145,6 +170,11 @@
     }
 
     // 2) 美国
+    // us_counties.js 是按需加载的，这里先确保到位，否则美国坐标会被误判成「无结果」。
+    // 判据：粗判落在美国大陆/阿拉斯加/夏威夷的经度纬度范围内才去拉那 256KB。
+    if (lng > -180 && lng < -60 && lat > 15 && lat < 72) {
+      await ensureUsData();
+    }
     const st = hitFeature(lng, lat, usStates());
     if (st) {
       const stName = st.properties.name;

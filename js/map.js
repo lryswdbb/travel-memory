@@ -11,6 +11,22 @@
   function reg(name, geo) {
     if (!registered[name]) { echarts.registerMap(name, geo); registered[name] = true; }
   }
+  // 美国州县边界约 256KB（gzip 后），进入美国地图才需要。
+  // 首屏就加载会让国内网络多等十几秒，所以改成点进美国时再拉。
+  let usDataPromise = null;
+  function ensureUsData() {
+    if (G.us_counties) return Promise.resolve();
+    if (!usDataPromise) {
+      usDataPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'data/js/us_counties.js';
+        s.onload = () => resolve();
+        s.onerror = () => { usDataPromise = null; reject(new Error('美国州县数据加载失败')); };
+        document.head.appendChild(s);
+      });
+    }
+    return usDataPromise;
+  }
   function usGeo(obj) { return topojson.feature(G.us_counties, G.us_counties.objects[obj]); }
 
   // 重建地图：先取消待执行的 tooltip 任务。
@@ -187,6 +203,7 @@
   }
 
   async function renderUsStates() {
+    await ensureUsData();
     const geo = usGeo('states');
     reg('us_states', geo);
     const visited = visitedSet('us_state');
@@ -200,6 +217,7 @@
   }
 
   async function renderUsCounties(stateName) {
+    await ensureUsData();
     const all = usGeo('counties');
     const stFips = usStateFips[stateName];
     const geo = { type: 'FeatureCollection', features: all.features.filter(f => f.id && f.id.startsWith(stFips)) };
@@ -345,8 +363,13 @@
 
   // ---- 对外接口 ----
   window.MAP = {
-    init(el) {
+    async init(el) {
       chart = echarts.init(el, null, { renderer: 'canvas' });
+      // 地图边界数据由 geo-loader.js 并行拉取，这里等它到位再画。
+      // 数据没到就 renderWorld 会读不到 G.world 而画成空白。
+      if (window.GEO_READY) {
+        try { await window.GEO_READY; } catch (e) { console.warn('地图数据加载异常：', e); }
+      }
       renderWorld();
       bindClick();
       addEventListener('resize', () => chart.resize());

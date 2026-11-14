@@ -117,9 +117,14 @@
 
     // 地图页 → 统计页
     document.getElementById('btn-stats').addEventListener('click', () => {
-      window.STATS.render();
-      window.showScene('scene-stats');
-      setTimeout(() => window.STATS.resize && window.STATS.resize(), 100);
+      // 统计页里的迷你世界地图依赖 echarts（按需加载）
+      const go = () => {
+        window.STATS.render();
+        window.showScene('scene-stats');
+        setTimeout(() => window.STATS.resize && window.STATS.resize(), 100);
+      };
+      if (window.echarts || !window.LIBS) go();
+      else window.LIBS.load().then(go).catch(e => { console.warn('统计页库加载失败：', e); go(); });
     });
     document.getElementById('stats-back').addEventListener('click', () => {
       window.showScene('scene-map');
@@ -143,7 +148,12 @@
       window.showScene('scene-map');
       if (!window.__mapInited) {
         window.__mapInited = true;
-        window.MAP.init(document.getElementById('map-chart'));
+        // echarts 是按需加载的（见 lib-loader.js），这里确保到位再初始化
+        const boot = () => window.MAP.init(document.getElementById('map-chart'));
+        if (window.echarts) boot();
+        else if (window.LIBS) {
+          window.LIBS.load().then(boot).catch(e => console.error('地图库加载失败：', e));
+        } else boot();
       } else {
         window.MAP.refreshHighlight();
       }
@@ -185,21 +195,21 @@
       addEventListener('keydown', onKey);
       document.getElementById('scene-warp').addEventListener('click', skip);
 
-      let started = false;
-      try {
-        WarpScene.init(document.getElementById('warp-canvas'));
-        // 回调：用户在抵达态点「进入地图」/双击后触发
-        WarpScene.start(() => { cleanup(); goMap(); });
-        started = true;
-      } catch (e) {
-        console.error('星际穿梭动画初始化失败，直接进入地图：', e);
-        cleanup();
-        goMap();
-        return;
-      }
-      // 双保险：动画卡死（未抵达）时最多 13 秒强制跳过；
-      // 已抵达则不再计时——用户可能正在把玩地球，等他自己点进入
-      if (started) {
+      // three.js 是按需加载的（见 lib-loader.js）。封面页不下载它，
+      // 这里等库到位再启动动画；期间屏幕上显示「正在穿越星系」的提示。
+      const startWarp = () => {
+        try {
+          WarpScene.init(document.getElementById('warp-canvas'));
+          // 回调：用户在抵达态点「进入地图」/双击后触发
+          WarpScene.start(() => { cleanup(); goMap(); });
+        } catch (e) {
+          console.error('星际穿梭动画初始化失败，直接进入地图：', e);
+          cleanup();
+          goMap();
+          return;
+        }
+        // 双保险：动画卡死（未抵达）时最多 13 秒强制跳过；
+        // 已抵达则不再计时——用户可能正在把玩地球，等他自己点进入
         setTimeout(() => {
           if (document.getElementById('scene-map').classList.contains('visible')) return;
           if (WarpScene.arrived) return;
@@ -207,10 +217,34 @@
           cleanup();
           try { WarpScene.skip(); } catch (e) { }
         }, 13000);
+      };
+
+      if (window.THREE) { startWarp(); return; }
+      if (window.LIBS) {
+        window.LIBS.load().then(startWarp).catch(e => {
+          console.error('动画库加载失败，直接进地图：', e);
+          cleanup();
+          goMap();
+        });
+      } else {
+        startWarp();
       }
+    });
+  }
+
+  // ---------- Service Worker：首次慢、之后秒开 ----------
+  // 站点部署在 GitHub Pages，国内访问常只有 20KB/s，首次要下 1.2MB。
+  // 注册 SW 后资源落到本地缓存，第二次打开基本不再走网络。
+  function registerSW() {
+    if (!('serviceWorker' in navigator)) return;
+    // 只在实际部署或 localhost 下注册；file:// 打开时不注册
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') return;
+    addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW 注册失败：', e));
     });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
+  registerSW();
 })();
